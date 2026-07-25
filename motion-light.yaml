@@ -1,29 +1,31 @@
 blueprint:
-  name: Resettable Motion Light Timer
+  name: Resettable Sensor Target Timer
   description: >
-    Turns on lights when motion is detected by one or more sensors. 
-    The timeout countdown only begins when ALL sensors are clear. 
-    If new motion is detected during the countdown, the timer resets completely.
+    Turns on entities when triggered by one or more binary sensors. 
+    The timeout countdown only begins when ALL triggering sensors are clear. 
+    If new activity is detected during the countdown, the timer resets completely.
   domain: automation
   input:
-    motion_sensors:
-      name: Motion Sensors
-      description: One or more motion sensors to trigger the lights.
+    trigger_sensors:
+      name: Trigger Sensors
+      description: One or more binary sensors (motion, doors, occupancy, etc.) to trigger the action.
       selector:
         entity:
           domain: binary_sensor
-          device_class: motion
           multiple: true
-    target_lights:
-      name: Lights
-      description: The lights to turn on and off.
+    target_entities:
+      name: Targets
+      description: The lights, switches, or input booleans to turn on and off.
       selector:
         target:
           entity:
-            domain: light
+            domain:
+              - light
+              - switch
+              - input_boolean
     timeout_seconds:
       name: Timeout (Seconds)
-      description: How long to keep the lights on after the last motion has stopped.
+      description: How long to keep the targets on after the last sensor has cleared.
       default: 60
       selector:
         number:
@@ -31,31 +33,29 @@ blueprint:
           max: 3600
           unit_of_measurement: seconds
 
-# This is the key: it kills the active countdown and restarts if triggered again
 mode: restart
 max_exceeded: silent
 
 variables:
-  # Map the input to a variable so we can use it in the Jinja template below
-  sensors: !input motion_sensors
+  sensors: !input trigger_sensors
 
 trigger:
   - platform: state
-    entity_id: !input motion_sensors
+    entity_id: !input trigger_sensors
     to: "on"
 
 action:
-  - alias: "Turn on the lights"
-    action: light.turn_on
-    target: !input target_lights
+  - alias: "Turn on the targets"
+    action: homeassistant.turn_on
+    target: !input target_entities
 
-  - alias: "Wait until ALL selected motion sensors are clear"
+  - alias: "Wait until ALL selected sensors are clear"
     wait_template: "{{ expand(sensors) | selectattr('state', 'eq', 'on') | list | length == 0 }}"
 
   - alias: "Wait the specified timeout period"
     delay:
       seconds: !input timeout_seconds
 
-  - alias: "Turn off the lights"
-    action: light.turn_off
-    target: !input target_lights
+  - alias: "Turn off the targets"
+    action: homeassistant.turn_off
+    target: !input target_entities
