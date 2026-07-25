@@ -1,17 +1,25 @@
 blueprint:
-  name: Resettable Sensor Target Timer
+  name: Resettable Activity/Presence Timer
   description: >
-    Turns on entities when triggered by one or more binary sensors. 
+    Turns on entities when triggered by one or more activity or presence sensors
+    (motion, occupancy, presence, or contact sensors like doors/windows/openings).
     The timeout countdown only begins when ALL triggering sensors are clear. 
     If new activity is detected during the countdown, the timer resets completely.
   domain: automation
   input:
     trigger_sensors:
       name: Trigger Sensors
-      description: One or more binary sensors (motion, doors, occupancy, etc.) to trigger the action.
+      description: One or more binary sensors to trigger the action (motion, occupancy, presence, or contact sensors).
       selector:
         entity:
           domain: binary_sensor
+          device_class:
+            - motion
+            - occupancy
+            - presence
+            - door
+            - window
+            - opening
           multiple: true
     target_entities:
       name: Targets
