@@ -1,0 +1,61 @@
+blueprint:
+  name: Resettable Motion Light Timer
+  description: >
+    Turns on lights when motion is detected by one or more sensors. 
+    The timeout countdown only begins when ALL sensors are clear. 
+    If new motion is detected during the countdown, the timer resets completely.
+  domain: automation
+  input:
+    motion_sensors:
+      name: Motion Sensors
+      description: One or more motion sensors to trigger the lights.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class: motion
+          multiple: true
+    target_lights:
+      name: Lights
+      description: The lights to turn on and off.
+      selector:
+        target:
+          entity:
+            domain: light
+    timeout_seconds:
+      name: Timeout (Seconds)
+      description: How long to keep the lights on after the last motion has stopped.
+      default: 60
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+
+# This is the key: it kills the active countdown and restarts if triggered again
+mode: restart
+max_exceeded: silent
+
+variables:
+  # Map the input to a variable so we can use it in the Jinja template below
+  sensors: !input motion_sensors
+
+trigger:
+  - platform: state
+    entity_id: !input motion_sensors
+    to: "on"
+
+action:
+  - alias: "Turn on the lights"
+    action: light.turn_on
+    target: !input target_lights
+
+  - alias: "Wait until ALL selected motion sensors are clear"
+    wait_template: "{{ expand(sensors) | selectattr('state', 'eq', 'on') | list | length == 0 }}"
+
+  - alias: "Wait the specified timeout period"
+    delay:
+      seconds: !input timeout_seconds
+
+  - alias: "Turn off the lights"
+    action: light.turn_off
+    target: !input target_lights
