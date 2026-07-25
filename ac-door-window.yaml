@@ -5,12 +5,17 @@ blueprint:
     and window sensors.
 
     Rules:
-      - If the AC is turned on while any door/window is open, it turns off
-        immediately.
-      - If a door/window is opened while the AC is on, the AC turns off after a
-        timeout (default 5 minutes) if the opening stays open.
-      - If every door/window closes before the timeout, nothing happens and the
-        AC keeps running.
+      - If the AC is turned on while the room is "open", it turns off immediately.
+      - If the room becomes "open" while the AC is on, the AC turns off after a
+        timeout (default 5 minutes) if it stays open.
+      - If the room closes up before the timeout, nothing happens and the AC
+        keeps running.
+
+    The room is "open" if any direct door/window sensor is open, OR if a "gated"
+    group is open. A gated group models a nested space (e.g. a closet or an
+    adjacent office): it only counts as open when BOTH its connecting door(s) AND
+    a sensor inside it (e.g. the closet/office window) are open at the same time.
+    Up to two gated groups are supported; leave them empty if you don't need them.
 
     Create one automation per room/AC unit.
   domain: automation
@@ -23,8 +28,61 @@ blueprint:
           domain: climate
 
     openings:
-      name: Door & Window Sensors
-      description: One or more contact sensors for the room's doors and windows.
+      name: Direct Door & Window Sensors
+      description: Sensors that always count as an opening (doors/windows directly to the outside or corridor).
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - window
+            - opening
+          multiple: true
+
+    gated_1_doors:
+      name: "Gated Group 1 - Connecting Door(s)"
+      description: >
+        The door(s) between the room and an inner space (e.g. the closet door, or
+        the door to an adjacent office). Leave empty if you don't use this group.
+      default: []
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - opening
+          multiple: true
+    gated_1_sensors:
+      name: "Gated Group 1 - Inner Sensor(s)"
+      description: >
+        Sensor(s) inside that inner space (e.g. the closet window, or the office
+        window). They only count when a connecting door above is also open.
+        Leave empty if you don't use this group.
+      default: []
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - window
+            - opening
+          multiple: true
+
+    gated_2_doors:
+      name: "Gated Group 2 - Connecting Door(s)"
+      description: Optional second gated group. Leave empty if unused.
+      default: []
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - opening
+          multiple: true
+    gated_2_sensors:
+      name: "Gated Group 2 - Inner Sensor(s)"
+      description: Optional second gated group. Leave empty if unused.
+      default: []
       selector:
         entity:
           domain: binary_sensor
@@ -36,7 +94,7 @@ blueprint:
 
     open_timeout_seconds:
       name: Open Timeout
-      description: How long a door/window can stay open (while the AC is on) before the AC is turned off.
+      description: How long the room can stay open (while the AC is on) before the AC is turned off.
       default: 300
       selector:
         number:
@@ -47,7 +105,19 @@ blueprint:
 
 variables:
   ac_unit: !input ac
-  opening_list: !input openings
+  direct_openings: !input openings
+  gated_1_doors: !input gated_1_doors
+  gated_1_sensors: !input gated_1_sensors
+  gated_2_doors: !input gated_2_doors
+  gated_2_sensors: !input gated_2_sensors
+  is_open: >-
+    {{
+      (expand(direct_openings) | selectattr('state', 'eq', 'on') | list | length > 0)
+      or ((expand(gated_1_doors) | selectattr('state', 'eq', 'on') | list | length > 0)
+          and (expand(gated_1_sensors) | selectattr('state', 'eq', 'on') | list | length > 0))
+      or ((expand(gated_2_doors) | selectattr('state', 'eq', 'on') | list | length > 0)
+          and (expand(gated_2_sensors) | selectattr('state', 'eq', 'on') | list | length > 0))
+    }}
 
 mode: restart
 
@@ -61,29 +131,50 @@ trigger:
     not_to:
       - "unavailable"
       - "unknown"
+  - platform: state
+    entity_id: !input gated_1_doors
+    not_to:
+      - "unavailable"
+      - "unknown"
+  - platform: state
+    entity_id: !input gated_1_sensors
+    not_to:
+      - "unavailable"
+      - "unknown"
+  - platform: state
+    entity_id: !input gated_2_doors
+    not_to:
+      - "unavailable"
+      - "unknown"
+  - platform: state
+    entity_id: !input gated_2_sensors
+    not_to:
+      - "unavailable"
+      - "unknown"
 
 action:
   - choose:
-      - alias: "AC turned on while a door/window is open -> off immediately"
+      - alias: "AC turned on while the room is open -> off immediately"
         conditions:
           - condition: trigger
             id: ac_turned_on
           - condition: template
-            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+            value_template: "{{ is_open }}"
         sequence:
           - action: climate.turn_off
             target:
               entity_id: !input ac
-      - alias: "AC on and a door/window is open -> off after timeout if it stays open"
+      - alias: "AC on and the room is open -> off after the timeout if it stays open"
         conditions:
           - condition: template
             value_template: "{{ states(ac_unit) not in ['off', 'unavailable', 'unknown'] }}"
           - condition: template
-            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+            value_template: "{{ is_open }}"
         sequence:
           - delay: !input open_timeout_seconds
           - condition: template
-            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+            value_template: "{{ is_open }}"
           - action: climate.turn_off
             target:
               entity_id: !input ac
+    default: []
