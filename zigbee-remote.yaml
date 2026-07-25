@@ -1,0 +1,196 @@
+blueprint:
+  name: Zigbee Remote Controller
+  description: >
+    Map every button event of a Zigbee remote to any action, in a single
+    automation. Works with remotes that expose one action sensor
+    (e.g. sensor.my_remote_action).
+
+    Two formats are supported:
+      - Single-button remotes: state values are `single`, `double`, `hold`.
+      - Multi-button remotes (up to 4 buttons): state values are `1_single`,
+        `1_double`, `1_hold`, `2_single`, ..., `4_hold`.
+
+    Expand only the section that matches your device and fill in the events you
+    use; everything else is ignored. One automation controls the whole remote.
+  domain: automation
+  homeassistant:
+    min_version: 2024.6.0
+  input:
+    action_sensor:
+      name: Action Sensor
+      description: The remote's action sensor (e.g. sensor.living_room_action).
+      selector:
+        entity:
+          domain: sensor
+
+    single_button:
+      name: 1-Button Remote (single / double / hold)
+      icon: mdi:remote
+      description: >
+        Single-button remotes that emit `single`, `double` and `hold`
+        (no number prefix). Expand this only if your remote has one button.
+      collapsed: true
+      input:
+        button_single:
+          name: Single Press
+          default: []
+          selector:
+            action: {}
+        button_double:
+          name: Double Press
+          default: []
+          selector:
+            action: {}
+        button_hold:
+          name: Hold
+          default: []
+          selector:
+            action: {}
+
+    button_1:
+      name: Multi-Button Remote - Button 1
+      icon: mdi:numeric-1-box
+      description: Events `1_single`, `1_double`, `1_hold`.
+      collapsed: true
+      input:
+        button_1_single:
+          name: Single Press
+          default: []
+          selector:
+            action: {}
+        button_1_double:
+          name: Double Press
+          default: []
+          selector:
+            action: {}
+        button_1_hold:
+          name: Hold
+          default: []
+          selector:
+            action: {}
+
+    button_2:
+      name: Multi-Button Remote - Button 2
+      icon: mdi:numeric-2-box
+      description: Events `2_single`, `2_double`, `2_hold`.
+      collapsed: true
+      input:
+        button_2_single:
+          name: Single Press
+          default: []
+          selector:
+            action: {}
+        button_2_double:
+          name: Double Press
+          default: []
+          selector:
+            action: {}
+        button_2_hold:
+          name: Hold
+          default: []
+          selector:
+            action: {}
+
+    button_3:
+      name: Multi-Button Remote - Button 3
+      icon: mdi:numeric-3-box
+      description: Events `3_single`, `3_double`, `3_hold`.
+      collapsed: true
+      input:
+        button_3_single:
+          name: Single Press
+          default: []
+          selector:
+            action: {}
+        button_3_double:
+          name: Double Press
+          default: []
+          selector:
+            action: {}
+        button_3_hold:
+          name: Hold
+          default: []
+          selector:
+            action: {}
+
+    button_4:
+      name: Multi-Button Remote - Button 4
+      icon: mdi:numeric-4-box
+      description: Events `4_single`, `4_double`, `4_hold`.
+      collapsed: true
+      input:
+        button_4_single:
+          name: Single Press
+          default: []
+          selector:
+            action: {}
+        button_4_double:
+          name: Double Press
+          default: []
+          selector:
+            action: {}
+        button_4_hold:
+          name: Hold
+          default: []
+          selector:
+            action: {}
+
+mode: queued
+max: 10
+
+trigger:
+  - platform: state
+    entity_id: !input action_sensor
+    not_to:
+      - ""
+      - "unavailable"
+      - "unknown"
+
+action:
+  - choose:
+      - conditions:
+          - "{{ trigger.to_state.state == 'single' }}"
+        sequence: !input button_single
+      - conditions:
+          - "{{ trigger.to_state.state == 'double' }}"
+        sequence: !input button_double
+      - conditions:
+          - "{{ trigger.to_state.state == 'hold' }}"
+        sequence: !input button_hold
+      - conditions:
+          - "{{ trigger.to_state.state == '1_single' }}"
+        sequence: !input button_1_single
+      - conditions:
+          - "{{ trigger.to_state.state == '1_double' }}"
+        sequence: !input button_1_double
+      - conditions:
+          - "{{ trigger.to_state.state == '1_hold' }}"
+        sequence: !input button_1_hold
+      - conditions:
+          - "{{ trigger.to_state.state == '2_single' }}"
+        sequence: !input button_2_single
+      - conditions:
+          - "{{ trigger.to_state.state == '2_double' }}"
+        sequence: !input button_2_double
+      - conditions:
+          - "{{ trigger.to_state.state == '2_hold' }}"
+        sequence: !input button_2_hold
+      - conditions:
+          - "{{ trigger.to_state.state == '3_single' }}"
+        sequence: !input button_3_single
+      - conditions:
+          - "{{ trigger.to_state.state == '3_double' }}"
+        sequence: !input button_3_double
+      - conditions:
+          - "{{ trigger.to_state.state == '3_hold' }}"
+        sequence: !input button_3_hold
+      - conditions:
+          - "{{ trigger.to_state.state == '4_single' }}"
+        sequence: !input button_4_single
+      - conditions:
+          - "{{ trigger.to_state.state == '4_double' }}"
+        sequence: !input button_4_double
+      - conditions:
+          - "{{ trigger.to_state.state == '4_hold' }}"
+        sequence: !input button_4_hold
+    default: []
