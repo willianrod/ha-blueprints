@@ -1,0 +1,89 @@
+blueprint:
+  name: AC Door/Window Guard
+  description: >
+    Automatically turns off an AC unit (climate entity) based on the room's door
+    and window sensors.
+
+    Rules:
+      - If the AC is turned on while any door/window is open, it turns off
+        immediately.
+      - If a door/window is opened while the AC is on, the AC turns off after a
+        timeout (default 5 minutes) if the opening stays open.
+      - If every door/window closes before the timeout, nothing happens and the
+        AC keeps running.
+
+    Create one automation per room/AC unit.
+  domain: automation
+  input:
+    ac:
+      name: AC Unit
+      description: The climate entity of the AC unit.
+      selector:
+        entity:
+          domain: climate
+
+    openings:
+      name: Door & Window Sensors
+      description: One or more contact sensors for the room's doors and windows.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - window
+            - opening
+          multiple: true
+
+    open_timeout_seconds:
+      name: Open Timeout
+      description: How long a door/window can stay open (while the AC is on) before the AC is turned off.
+      default: 300
+      selector:
+        number:
+          min: 0
+          max: 3600
+          unit_of_measurement: seconds
+          mode: box
+
+variables:
+  ac_unit: !input ac
+  opening_list: !input openings
+
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id: !input ac
+    id: ac_turned_on
+    from: "off"
+  - platform: state
+    entity_id: !input openings
+    not_to:
+      - "unavailable"
+      - "unknown"
+
+action:
+  - choose:
+      - alias: "AC turned on while a door/window is open -> off immediately"
+        conditions:
+          - condition: trigger
+            id: ac_turned_on
+          - condition: template
+            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+        sequence:
+          - action: climate.turn_off
+            target:
+              entity_id: "{{ ac_unit }}"
+      - alias: "AC on and a door/window is open -> off after timeout if it stays open"
+        conditions:
+          - condition: template
+            value_template: "{{ states(ac_unit) not in ['off', 'unavailable', 'unknown'] }}"
+          - condition: template
+            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+        sequence:
+          - delay: !input open_timeout_seconds
+          - condition: template
+            value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+          - action: climate.turn_off
+            target:
+              entity_id: "{{ ac_unit }}"
