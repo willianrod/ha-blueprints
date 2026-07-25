@@ -1,0 +1,44 @@
+blueprint:
+  name: Synchronized Switches
+  description: >
+    Keeps two or more switches in sync. When any switch turns on or off, all the
+    others follow almost instantly. Loop-safe: it only acts when a switch is
+    actually out of step with the trigger, so cascading changes settle immediately
+    instead of bouncing forever.
+  domain: automation
+  input:
+    switches:
+      name: Switches to Synchronize
+      description: Select two or more switches that should mirror each other.
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+
+mode: single
+max_exceeded: silent
+
+variables:
+  switch_list: !input switches
+
+trigger:
+  - platform: state
+    entity_id: !input switches
+    not_to:
+      - "unavailable"
+      - "unknown"
+
+action:
+  - alias: "Only sync when some other switch is out of step (prevents loops)"
+    if:
+      - condition: template
+        value_template: >
+          {{ expand(switch_list)
+             | rejectattr('entity_id', 'eq', trigger.entity_id)
+             | selectattr('state', 'ne', trigger.to_state.state)
+             | list | length > 0 }}
+    then:
+      - alias: "Apply the trigger's new state to every synced switch"
+        action: "{{ 'homeassistant.turn_on' if trigger.to_state.state == 'on' else 'homeassistant.turn_off' }}"
+        target:
+          entity_id: !input switches
