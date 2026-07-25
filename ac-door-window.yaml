@@ -73,7 +73,7 @@ action:
         sequence:
           - action: climate.turn_off
             target:
-              entity_id: "{{ ac_unit }}"
+              entity_id: !input ac
       - alias: "AC on and a door/window is open -> off after timeout if it stays open"
         conditions:
           - condition: template
@@ -86,4 +86,4 @@ action:
             value_template: "{{ expand(opening_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
           - action: climate.turn_off
             target:
-              entity_id: "{{ ac_unit }}"
+              entity_id: !input ac
