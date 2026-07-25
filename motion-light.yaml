@@ -5,6 +5,7 @@ blueprint:
     (motion, occupancy, presence, or contact sensors like doors/windows/openings).
     The timeout countdown only begins when ALL triggering sensors are clear. 
     If new activity is detected during the countdown, the timer resets completely.
+    Optionally restrict it to run only during the day, only at night, or anytime.
   domain: automation
   input:
     trigger_sensors:
@@ -31,6 +32,19 @@ blueprint:
               - light
               - switch
               - input_boolean
+    time_condition:
+      name: Active Period
+      description: When this automation is allowed to run.
+      default: night
+      selector:
+        select:
+          options:
+            - label: "Night only (sun below horizon)"
+              value: "night"
+            - label: "Day only (sun above horizon)"
+              value: "day"
+            - label: "Anytime"
+              value: "anytime"
     timeout_seconds:
       name: Timeout (Seconds)
       description: How long to keep the targets on after the last sensor has cleared.
@@ -46,6 +60,7 @@ max_exceeded: silent
 
 variables:
   sensors: !input trigger_sensors
+  time_mode: !input time_condition
 
 trigger:
   - platform: state
@@ -53,6 +68,13 @@ trigger:
     to: "on"
 
 action:
+  - alias: "Only run during the selected period (day/night/anytime)"
+    condition: template
+    value_template: >
+      {{ time_mode == 'anytime'
+         or (time_mode == 'night' and is_state('sun.sun', 'below_horizon'))
+         or (time_mode == 'day' and is_state('sun.sun', 'above_horizon')) }}
+
   - alias: "Turn on the targets"
     action: homeassistant.turn_on
     target: !input target_entities
