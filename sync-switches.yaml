@@ -2,9 +2,10 @@ blueprint:
   name: Synchronized Switches
   description: >
     Keeps two or more switches in sync. When any switch turns on or off, all the
-    others follow almost instantly. Loop-safe: it only acts when a switch is
-    actually out of step with the trigger, so cascading changes settle immediately
-    instead of bouncing forever.
+    others follow almost instantly. Loop-safe: it ignores state changes caused by
+    the automation itself (echo suppression via context) and only acts when a
+    switch is actually out of step with the trigger, so spamming a switch never
+    starts a feedback loop.
   domain: automation
   input:
     switches:
@@ -29,9 +30,13 @@ trigger:
       - "unknown"
 
 action:
-  - alias: "Only sync when some other switch is out of step (prevents loops)"
+  - alias: "Only sync on real (non-automation) changes when some switch is out of step"
     if:
-      - condition: template
+      - alias: "Ignore changes caused by this automation (breaks echo loops)"
+        condition: template
+        value_template: "{{ trigger.to_state.context.parent_id is none }}"
+      - alias: "Only sync when some other switch is out of step"
+        condition: template
         value_template: >
           {{ expand(switch_list)
              | rejectattr('entity_id', 'eq', trigger.entity_id)
