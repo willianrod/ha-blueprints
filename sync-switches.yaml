@@ -4,10 +4,11 @@ blueprint:
     Keeps two or more switches and/or lights in sync. When any of them turns on
     or off, all the others follow almost instantly. Works with any mix of switch
     and light entities (e.g. bind a light to a switch so toggling either one
-    mirrors the other). Loop-safe: it ignores state changes caused by the
-    automation itself (echo suppression via context) and only acts when an entity
-    is actually out of step with the trigger, so spamming never starts a feedback
-    loop.
+    mirrors the other).
+
+    Loop-safe via a short cooldown: the first change syncs immediately, then a
+    brief cooldown ignores the echoes (the state changes caused by this
+    automation's own sync) so spamming a switch can't start a feedback loop.
   domain: automation
   input:
     entities:
@@ -19,6 +20,21 @@ blueprint:
             - switch
             - light
           multiple: true
+    cooldown_seconds:
+      name: Cooldown
+      description: >-
+        After a sync, ignore further changes for this long to absorb echoes and
+        prevent loops. Keep it a little longer than the time your devices take to
+        report their new state (default 1s is fine for most). Lower it if you
+        toggle quickly and presses feel missed.
+      default: 1
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+          unit_of_measurement: seconds
+          mode: box
 
 mode: single
 max_exceeded: silent
@@ -34,13 +50,9 @@ trigger:
       - "unknown"
 
 action:
-  - alias: "Only sync on real (non-automation) changes when some entity is out of step"
+  - alias: "Sync only when some entity is out of step with the trigger"
     if:
-      - alias: "Ignore changes caused by this automation (breaks echo loops)"
-        condition: template
-        value_template: "{{ trigger.to_state.context.parent_id is none }}"
-      - alias: "Only sync when some other entity is out of step"
-        condition: template
+      - condition: template
         value_template: >
           {{ expand(entity_list)
              | rejectattr('entity_id', 'eq', trigger.entity_id)
@@ -51,3 +63,5 @@ action:
         action: "{{ 'homeassistant.turn_on' if trigger.to_state.state == 'on' else 'homeassistant.turn_off' }}"
         target:
           entity_id: !input entities
+      - alias: "Cooldown to absorb the echo of this sync"
+        delay: !input cooldown_seconds
