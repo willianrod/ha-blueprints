@@ -1,0 +1,71 @@
+blueprint:
+  name: Door Night Lights
+  description: >
+    Turns on lights when a door is opened at night (after sunset or before
+    sunrise). If a door is already open at the moment of sunset, the lights come
+    on automatically. When all doors are closed, the lights turn off immediately.
+    During the day the lights are kept off.
+  domain: automation
+  input:
+    door_sensors:
+      name: Door Sensors
+      description: Contact sensor(s) on the door(s) that trigger the lights. Lights turn off only when ALL of them are closed.
+      selector:
+        entity:
+          domain: binary_sensor
+          device_class:
+            - door
+            - opening
+          multiple: true
+    lights:
+      name: Lights
+      description: The light(s) to control.
+      selector:
+        target:
+          entity:
+            domain:
+              - light
+              - switch
+
+variables:
+  door_list: !input door_sensors
+
+mode: single
+
+trigger:
+  - platform: state
+    entity_id: !input door_sensors
+    not_to:
+      - "unavailable"
+      - "unknown"
+  - platform: state
+    entity_id: sun.sun
+
+action:
+  - choose:
+      - alias: "Daytime -> lights off"
+        conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: above_horizon
+        sequence:
+          - action: homeassistant.turn_off
+            target: !input lights
+      - alias: "Night and a door is open -> lights on"
+        conditions:
+          - condition: state
+            entity_id: sun.sun
+            state: below_horizon
+          - condition: template
+            value_template: "{{ expand(door_list) | selectattr('state', 'eq', 'on') | list | length > 0 }}"
+        sequence:
+          - action: homeassistant.turn_on
+            target: !input lights
+      - alias: "All doors closed -> lights off immediately"
+        conditions:
+          - condition: template
+            value_template: "{{ expand(door_list) | selectattr('state', 'eq', 'on') | list | length == 0 }}"
+        sequence:
+          - action: homeassistant.turn_off
+            target: !input lights
+    default: []
