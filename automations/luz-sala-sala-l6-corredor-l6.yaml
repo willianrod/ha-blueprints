@@ -4,9 +4,6 @@ description: ""
 use_blueprint:
   path: willianrod/sync-switches.yaml
   input:
-    switches:
-      - switch.corredor_l6
-      - switch.sala_interruptor_l6
     entities:
       - switch.sala_interruptor_l6
       - switch.corredor_l6

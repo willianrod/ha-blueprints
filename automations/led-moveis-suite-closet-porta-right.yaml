@@ -8,4 +8,3 @@ use_blueprint:
       - light.moveis_suite
       - switch.suite_porta_right
       - switch.closet_right
-    cooldown_seconds: 0.2

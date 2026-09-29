@@ -9,8 +9,10 @@ blueprint:
 
     Mixed domains are supported: brightness/color only propagate to lights, speed
     only to fans. Loop-safe: it ignores state changes caused by this automation
-    itself (echo suppression via context) and applies a short debounce, so spamming
-    an entity can't start a feedback loop. Adapted from alexdelprete's Linked
+    itself (echo suppression via context), applies a short debounce, runs in
+    restart mode so the newest state always wins, aborts stale runs when the
+    triggering entity changed again, and sends a single command per entity to
+    keep Zigbee meshes uncongested. Adapted from alexdelprete's Linked
     Entities blueprint.
   domain: automation
   input:
@@ -60,7 +62,7 @@ blueprint:
           unit_of_measurement: seconds
           mode: box
 
-mode: single
+mode: restart
 max_exceeded: silent
 
 variables:
@@ -132,9 +134,21 @@ condition:
          and trigger.to_state.context.parent_id != this.context.id }}
 
 action:
+  - alias: abort stale runs - a newer state arrived since the trigger fired
+    if:
+      - condition: trigger
+        id:
+          - turn_on
+          - turn_off
+      - condition: template
+        value_template: "{{ states(trigger.entity_id) != trigger.to_state.state }}"
+    then:
+      - stop: "stale trigger: entity changed again before propagation"
+
   - variables:
       others: "{{ linked_entities | reject('eq', trigger.entity_id) | list }}"
       other_lights: "{{ others | select('match', '^light\\.') | list }}"
+      other_non_lights: "{{ others | reject('match', '^light\\.') | list }}"
       other_fans: "{{ others | select('match', '^fan\\.') | list }}"
       src_brightness: "{{ state_attr(trigger.entity_id, 'brightness') }}"
       src_color_mode: "{{ state_attr(trigger.entity_id, 'color_mode') }}"
@@ -168,13 +182,13 @@ action:
             id: turn_on
         sequence:
           - if:
-              - "{{ others | count > 0 }}"
+              - "{{ other_non_lights | count > 0 }}"
             then:
               - action: homeassistant.turn_on
                 target:
-                  entity_id: "{{ others }}"
+                  entity_id: "{{ other_non_lights }}"
           - if:
-              - "{{ other_lights | count > 0 and trigger.entity_id.startswith('light.') and light_on_data | count > 0 }}"
+              - "{{ other_lights | count > 0 }}"
             then:
               - action: light.turn_on
                 target:

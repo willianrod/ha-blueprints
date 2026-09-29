@@ -7,4 +7,3 @@ use_blueprint:
     entities:
       - switch.interruptor_escritorio_l3
       - light.fita_de_led_escritorio
-    cooldown_seconds: 0.2

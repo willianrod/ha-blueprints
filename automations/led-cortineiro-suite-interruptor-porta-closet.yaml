@@ -8,4 +8,3 @@ use_blueprint:
       - light.cortineiro_suite
       - switch.closet_center
       - switch.suite_porta_center
-    cooldown_seconds: 0.2
