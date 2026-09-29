@@ -7,6 +7,9 @@ use_blueprint:
     ac: climate.quarto_1_ar_suite
     openings:
       - binary_sensor.porta_suite_contact
-      - binary_sensor.porta_closet_contact
       - binary_sensor.janela_suite_contact
+    gated_1_doors:
+      - binary_sensor.porta_closet_contact
+    gated_1_sensors:
+      - binary_sensor.janela_closet_contact
     open_timeout_seconds: 300
