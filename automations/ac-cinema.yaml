@@ -8,7 +8,7 @@ use_blueprint:
     openings:
       - binary_sensor.janela_cinema_contact
       - binary_sensor.porta_cinema_contact
-    open_timeout_seconds: 10
+    open_timeout_seconds: 300
     gated_1_doors:
       - binary_sensor.porta_escritorio_contact
     gated_1_sensors:
