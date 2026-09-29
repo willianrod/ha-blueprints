@@ -1,0 +1,27 @@
+id: "1790709200004"
+alias: Controle Remoto Demi
+description: >-
+  Controle de 2 botões na cabeceira da demi-suite.
+  Botão 1: luz do quarto; duplo: cortineiro. Botão 2: luz dos móveis.
+use_blueprint:
+  path: willianrod/zigbee-remote.yaml
+  input:
+    action_sensor: sensor.controle_remoto_demi_action
+    button_1_single:
+      - action: switch.toggle
+        metadata: {}
+        target:
+          entity_id: switch.demi_suite_interruptor_porta_left
+        data: {}
+    button_1_double:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.cortineiro_demi
+        data: {}
+    button_2_single:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.moveis_demi_suite
+        data: {}

@@ -1,0 +1,13 @@
+id: "1790709200002"
+alias: Irrigação Jardim da Frente
+description: >-
+  Rega o jardim da frente (maranta charuto, alpinias, xanadu e guaiambê) pela
+  manhã, pulando o dia quando a previsão indica chuva >= 5 mm.
+use_blueprint:
+  path: willianrod/smart-irrigation.yaml
+  input:
+    valve: switch.0xc4d8c8fffe4b0aad
+    start_time: "06:00:00"
+    duration_minutes: 10
+    weather_entity: weather.openweathermap
+    rain_threshold_mm: 5

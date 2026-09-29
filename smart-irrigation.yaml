@@ -1,0 +1,94 @@
+blueprint:
+  name: Smart Irrigation with Rain Check
+  description: >
+    Waters a zone for a fixed duration at a scheduled time, skipping the run
+    when the daily weather forecast predicts rain at or above a threshold
+    (default 5 mm). Uses the weather.get_forecast service (daily forecast),
+    so any weather integration that supports forecasts works (OpenWeatherMap,
+    Met.no, etc.). Create one automation per irrigation zone.
+  domain: automation
+  input:
+    valve:
+      name: Irrigation Valve
+      description: The smart valve/switch that opens the zone.
+      selector:
+        entity:
+          domain: switch
+
+    start_time:
+      name: Start Time
+      description: When the watering run should start.
+      selector:
+        time: {}
+
+    duration_minutes:
+      name: Duration
+      description: How long the valve stays open, in minutes.
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 120
+          unit_of_measurement: minutes
+          mode: box
+          step: 1
+
+    weather_entity:
+      name: Weather Entity
+      description: Weather entity used to fetch the daily forecast.
+      selector:
+        entity:
+          domain: weather
+          integration: openweathermap
+
+    rain_threshold_mm:
+      name: Rain Threshold
+      description: Skip watering when today's forecast precipitation is at or above this value (mm).
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 50
+          step: 0.5
+          unit_of_measurement: mm
+          mode: box
+
+variables:
+  threshold_mm: !input rain_threshold_mm
+
+mode: single
+
+trigger:
+  - platform: time
+    at: !input start_time
+    id: watering_time
+
+action:
+  - alias: fetch the daily forecast
+    action: weather.get_forecast
+    target:
+      entity_id: !input weather_entity
+    data:
+      type: daily
+    response_variable: daily
+  - variables:
+      today_precipitation: >-
+        {{ daily.forecast[0].precipitation | default(0) | float(0) }}
+  - choose:
+      - alias: no significant rain forecasted -> water the zone
+        conditions:
+          - condition: template
+            value_template: "{{ today_precipitation < threshold_mm }}"
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: !input valve
+          - delay: "{{ duration_minutes * 60 }}"
+          - action: switch.turn_off
+            target:
+              entity_id: !input valve
+    default:
+      - alias: rain forecasted -> skip, make sure the valve is closed
+        action: switch.turn_off
+        target:
+          entity_id: !input valve

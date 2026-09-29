@@ -1,0 +1,13 @@
+id: "1790709200003"
+alias: Irrigação Jardim dos Fundos
+description: >-
+  Rega o jardim dos fundos (heliconia vermelha) pela manhã logo após o jardim
+  da frente, pulando o dia quando a previsão indica chuva >= 5 mm.
+use_blueprint:
+  path: willianrod/smart-irrigation.yaml
+  input:
+    valve: switch.0xc4d8c8fffe118b3f
+    start_time: "06:15:00"
+    duration_minutes: 10
+    weather_entity: weather.openweathermap
+    rain_threshold_mm: 5
