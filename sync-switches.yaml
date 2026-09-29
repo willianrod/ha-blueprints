@@ -181,18 +181,25 @@ action:
           - condition: trigger
             id: turn_on
         sequence:
+          - variables:
+              non_lights_to_on: >-
+                {{ expand(other_non_lights) | selectattr('state', 'in', ['off', 'unavailable', 'unknown'])
+                   | map(attribute='entity_id') | list }}
+              lights_to_on: >-
+                {{ expand(other_lights) | selectattr('state', 'in', ['off', 'unavailable', 'unknown'])
+                   | map(attribute='entity_id') | list }}
           - if:
-              - "{{ other_non_lights | count > 0 }}"
+              - "{{ non_lights_to_on | count > 0 }}"
             then:
               - action: homeassistant.turn_on
                 target:
-                  entity_id: "{{ other_non_lights }}"
+                  entity_id: "{{ non_lights_to_on }}"
           - if:
-              - "{{ other_lights | count > 0 }}"
+              - "{{ lights_to_on | count > 0 }}"
             then:
               - action: light.turn_on
                 target:
-                  entity_id: "{{ other_lights }}"
+                  entity_id: "{{ lights_to_on }}"
                 data: "{{ light_on_data }}"
           - delay:
               milliseconds: !input delay_milliseconds
@@ -201,12 +208,16 @@ action:
           - condition: trigger
             id: turn_off
         sequence:
+          - variables:
+              to_off: >-
+                {{ expand(others) | rejectattr('state', 'eq', 'off')
+                   | map(attribute='entity_id') | list }}
           - if:
-              - "{{ others | count > 0 }}"
+              - "{{ to_off | count > 0 }}"
             then:
               - action: homeassistant.turn_off
                 target:
-                  entity_id: "{{ others }}"
+                  entity_id: "{{ to_off }}"
           - delay:
               milliseconds: !input delay_milliseconds
 
@@ -214,14 +225,20 @@ action:
           - condition: trigger
             id: set_speed
           - "{{ trigger.entity_id.startswith('fan.') }}"
-          - "{{ other_fans | count > 0 }}"
           - "{{ src_percentage is not none }}"
         sequence:
-          - action: fan.set_percentage
-            target:
-              entity_id: "{{ other_fans }}"
-            data:
-              percentage: "{{ src_percentage }}"
+          - variables:
+              fans_on: >-
+                {{ expand(other_fans) | selectattr('state', 'eq', 'on')
+                   | map(attribute='entity_id') | list }}
+          - if:
+              - "{{ fans_on | count > 0 }}"
+            then:
+              - action: fan.set_percentage
+                target:
+                  entity_id: "{{ fans_on }}"
+                data:
+                  percentage: "{{ src_percentage }}"
           - delay:
               milliseconds: !input delay_milliseconds
 
@@ -229,13 +246,19 @@ action:
           - condition: trigger
             id: set_brightness
           - "{{ trigger.entity_id.startswith('light.') }}"
-          - "{{ other_lights | count > 0 }}"
           - "{{ src_brightness is not none }}"
         sequence:
-          - action: light.turn_on
-            target:
-              entity_id: "{{ other_lights }}"
-            data: "{{ {'brightness': src_brightness} | combine(transition_data) }}"
+          - variables:
+              lights_on: >-
+                {{ expand(other_lights) | selectattr('state', 'eq', 'on')
+                   | map(attribute='entity_id') | list }}
+          - if:
+              - "{{ lights_on | count > 0 }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ lights_on }}"
+                data: "{{ {'brightness': src_brightness} | combine(transition_data) }}"
           - delay:
               milliseconds: !input delay_milliseconds
 
@@ -247,12 +270,18 @@ action:
               - set_rgb_color
               - set_xy_color
           - "{{ trigger.entity_id.startswith('light.') }}"
-          - "{{ other_lights | count > 0 }}"
           - "{{ color_data | count > 0 }}"
         sequence:
-          - action: light.turn_on
-            target:
-              entity_id: "{{ other_lights }}"
-            data: "{{ color_data | combine(transition_data) }}"
+          - variables:
+              lights_on: >-
+                {{ expand(other_lights) | selectattr('state', 'eq', 'on')
+                   | map(attribute='entity_id') | list }}
+          - if:
+              - "{{ lights_on | count > 0 }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: "{{ lights_on }}"
+                data: "{{ color_data | combine(transition_data) }}"
           - delay:
               milliseconds: !input delay_milliseconds

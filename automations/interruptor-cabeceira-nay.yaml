@@ -30,14 +30,34 @@ use_blueprint:
           entity_id: climate.quarto_1_ar_suite
         data: {}
     button_3_single:
-      - action: light.toggle
-        metadata: {}
-        target:
-          entity_id: light.cortineiro_suite
-        data: {}
+      - if:
+          - condition: template
+            value_template: "{{ is_state('light.cortineiro_suite', 'on') }}"
+        then:
+          - action: light.turn_off
+            metadata: {}
+            data: {}
+            target:
+              entity_id: light.cortineiro_suite
+        else:
+          - action: light.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id: light.cortineiro_suite
     button_4_single:
-      - action: light.toggle
-        metadata: {}
-        target:
-          entity_id: light.moveis_suite
-        data: {}
+      - if:
+          - condition: template
+            value_template: "{{ is_state('light.moveis_suite', 'on') }}"
+        then:
+          - action: light.turn_off
+            metadata: {}
+            data: {}
+            target:
+              entity_id: light.moveis_suite
+        else:
+          - action: light.turn_on
+            metadata: {}
+            data: {}
+            target:
+              entity_id: light.moveis_suite
