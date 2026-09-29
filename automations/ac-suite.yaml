@@ -1,0 +1,12 @@
+id: "1785012628011"
+alias: AC Suite
+description: ""
+use_blueprint:
+  path: willianrod/ac-door-window.yaml
+  input:
+    ac: climate.quarto_1_ar_suite
+    openings:
+      - binary_sensor.porta_suite_contact
+      - binary_sensor.porta_closet_contact
+      - binary_sensor.janela_suite_contact
+    open_timeout_seconds: 300

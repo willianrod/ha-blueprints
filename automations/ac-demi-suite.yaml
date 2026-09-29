@@ -1,0 +1,11 @@
+id: "1785018849072"
+alias: AC Demi Suite
+description: ""
+use_blueprint:
+  path: willianrod/ac-door-window.yaml
+  input:
+    ac: climate.quarto_1_ar_quarto_terreo
+    openings:
+      - binary_sensor.janela_demi_contact
+      - binary_sensor.porta_demi_suite_contact
+    open_timeout_seconds: 300

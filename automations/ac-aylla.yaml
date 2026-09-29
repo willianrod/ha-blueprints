@@ -1,0 +1,11 @@
+id: "1785016971695"
+alias: AC Aylla
+description: ""
+use_blueprint:
+  path: willianrod/ac-door-window.yaml
+  input:
+    ac: climate.quarto_1_quarto_aylla
+    openings:
+      - binary_sensor.janela_quarto_superior_contact
+      - binary_sensor.porta_aylla_contact
+    open_timeout_seconds: 300

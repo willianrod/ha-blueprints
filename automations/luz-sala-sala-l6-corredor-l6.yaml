@@ -1,0 +1,12 @@
+id: "1785008783995"
+alias: Luz Sala | Sala L6 <-> Corredor L6
+description: ""
+use_blueprint:
+  path: willianrod/sync-switches.yaml
+  input:
+    switches:
+      - switch.corredor_l6
+      - switch.sala_interruptor_l6
+    entities:
+      - switch.sala_interruptor_l6
+      - switch.corredor_l6

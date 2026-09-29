@@ -1,0 +1,11 @@
+id: "1785179156657"
+alias: LED Cortineiro Suite <-> Interruptor Porta / Closet
+description: ""
+use_blueprint:
+  path: willianrod/sync-switches.yaml
+  input:
+    entities:
+      - light.cortineiro_suite
+      - switch.closet_center
+      - switch.suite_porta_center
+    cooldown_seconds: 0.2

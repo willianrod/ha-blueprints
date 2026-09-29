@@ -1,0 +1,14 @@
+id: "1785267376735"
+alias: Luzes do quintal automáticas ao abrir porta
+description: ""
+use_blueprint:
+  path: willianrod/door-night-lights.yaml
+  input:
+    door_sensors:
+      - binary_sensor.porta_fundos_contact
+      - binary_sensor.porta_lavanderia_contact
+    lights:
+      entity_id:
+        - switch.cozinha_1_l6
+        - switch.cozinha_2_l1
+        - switch.cozinha_2_l4

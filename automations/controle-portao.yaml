@@ -1,0 +1,19 @@
+id: "1785155062404"
+alias: Controle Portão
+description: ""
+use_blueprint:
+  path: willianrod/zigbee-remote.yaml
+  input:
+    action_sensor: sensor.0xa4c138be1f35c551_action
+    button_1_single:
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.esp_garage_garage_door_open
+        data: {}
+    button_2_single:
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.esp_garage_garage_door_close
+        data: {}

@@ -1,0 +1,9 @@
+id: "1785179020674"
+alias: LED Escada <-> L5 Sala
+description: ""
+use_blueprint:
+  path: willianrod/sync-switches.yaml
+  input:
+    entities:
+      - switch.sala_interruptor_l5
+      - light.escada

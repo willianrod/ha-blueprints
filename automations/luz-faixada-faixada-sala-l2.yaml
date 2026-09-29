@@ -1,0 +1,12 @@
+id: "1785009014671"
+alias: "Luz Faixada: Faixada <-> Sala L2"
+description: ""
+use_blueprint:
+  path: willianrod/sync-switches.yaml
+  input:
+    switches:
+      - switch.sala_interruptor_l2
+      - switch.faixada
+    entities:
+      - switch.faixada
+      - switch.sala_interruptor_l2

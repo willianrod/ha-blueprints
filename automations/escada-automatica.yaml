@@ -1,0 +1,13 @@
+id: "1785007377941"
+alias: Escada Automática
+description: ""
+use_blueprint:
+  path: willianrod/motion-light.yaml
+  input:
+    trigger_sensors:
+      - binary_sensor.sensor_escada_inferior_occupancy
+      - binary_sensor.sensor_escada_superior_occupancy
+    target_entities:
+      entity_id: switch.sala_interruptor_l5
+    timeout_seconds: 60
+    time_condition: anytime

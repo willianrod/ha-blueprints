@@ -1,0 +1,11 @@
+id: "1785251607043"
+alias: "LED Móveis Suíte <-> Closet/Porta Right "
+description: ""
+use_blueprint:
+  path: willianrod/sync-switches.yaml
+  input:
+    entities:
+      - light.moveis_suite
+      - switch.suite_porta_right
+      - switch.closet_right
+    cooldown_seconds: 0.2

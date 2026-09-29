@@ -1,0 +1,15 @@
+id: "1785018469983"
+alias: AC Cinema
+description: ""
+use_blueprint:
+  path: willianrod/ac-door-window.yaml
+  input:
+    ac: climate.sala_de_estar_ar_cinema
+    openings:
+      - binary_sensor.janela_cinema_contact
+      - binary_sensor.porta_cinema_contact
+    open_timeout_seconds: 10
+    gated_1_doors:
+      - binary_sensor.porta_escritorio_contact
+    gated_1_sensors:
+      - binary_sensor.janela_escritorio_contact

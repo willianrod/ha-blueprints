@@ -1,0 +1,11 @@
+id: "1785009808725"
+alias: Liga refletor se pessoa nos fundos
+description: ""
+use_blueprint:
+  path: willianrod/motion-light.yaml
+  input:
+    trigger_sensors:
+      - binary_sensor.fundos_person_occupancy
+    target_entities:
+      entity_id: switch.refletor_fundos
+    timeout_seconds: 600

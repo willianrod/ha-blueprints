@@ -1,0 +1,25 @@
+{
+  "name": "ha-blueprints",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "fetch": "node scripts/fetch.mjs",
+    "push:automations": "node scripts/push-automation.mjs",
+    "push:blueprint": "node scripts/push-blueprint.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/willianrod/ha-blueprints.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/willianrod/ha-blueprints/issues"
+  },
+  "homepage": "https://github.com/willianrod/ha-blueprints#readme",
+  "dependencies": {
+    "yaml": "^2.9.1"
+  }
+}

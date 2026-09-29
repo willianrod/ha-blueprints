@@ -1,0 +1,11 @@
+id: "1785009677315"
+alias: Liga luz faixada se detecta pessoa na calçada
+description: ""
+use_blueprint:
+  path: willianrod/motion-light.yaml
+  input:
+    trigger_sensors:
+      - binary_sensor.calcada_person_occupancy
+    target_entities:
+      entity_id: switch.faixada
+    timeout_seconds: 600

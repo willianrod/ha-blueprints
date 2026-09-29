@@ -1,0 +1,43 @@
+id: "1785011764982"
+alias: Interruptor Cabeceira Nay
+description: ""
+use_blueprint:
+  path: willianrod/zigbee-remote.yaml
+  input:
+    action_sensor: sensor.interruptor_cabeceira_nay_action
+    button_1_single:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.luminaria_nay
+        data: {}
+    button_1_double:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.luminaria_willian
+        data: {}
+    button_2_single:
+      - action: switch.toggle
+        metadata: {}
+        target:
+          entity_id: switch.suite_porta_left
+        data: {}
+    button_2_double:
+      - action: climate.toggle
+        metadata: {}
+        target:
+          entity_id: climate.quarto_1_ar_suite
+        data: {}
+    button_3_single:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.cortineiro_suite
+        data: {}
+    button_4_single:
+      - action: light.toggle
+        metadata: {}
+        target:
+          entity_id: light.moveis_suite
+        data: {}

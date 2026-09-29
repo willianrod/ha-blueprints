@@ -1,0 +1,15 @@
+id: "1785018650539"
+alias: AC Escritório
+description: ""
+use_blueprint:
+  path: willianrod/ac-door-window.yaml
+  input:
+    ac: climate.quarto_1_ar_escritorio
+    openings:
+      - binary_sensor.janela_escritorio_contact
+    open_timeout_seconds: 300
+    gated_1_doors:
+      - binary_sensor.porta_escritorio_contact
+    gated_1_sensors:
+      - binary_sensor.porta_cinema_contact
+      - binary_sensor.janela_cinema_contact
