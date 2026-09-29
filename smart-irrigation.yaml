@@ -55,6 +55,8 @@ blueprint:
 
 variables:
   threshold_mm: !input rain_threshold_mm
+  weather_entity_id: !input weather_entity
+  duration_min: !input duration_minutes
 
 mode: single
 
@@ -65,15 +67,17 @@ trigger:
 
 action:
   - alias: fetch the daily forecast
-    action: weather.get_forecast
+    action: weather.get_forecasts
     target:
       entity_id: !input weather_entity
     data:
       type: daily
-    response_variable: daily
+    response_variable: forecast_response
   - variables:
       today_precipitation: >-
-        {{ daily.forecast[0].precipitation | default(0) | float(0) }}
+        {% set data = forecast_response[weather_entity_id] if weather_entity_id in forecast_response else forecast_response %}
+        {% set today = data.get('forecast', [])[0] if data.get('forecast') else none %}
+        {{ (today.precipitation if today else 0) | default(0) | float(0) }}
   - choose:
       - alias: no significant rain forecasted -> water the zone
         conditions:
@@ -83,7 +87,7 @@ action:
           - action: switch.turn_on
             target:
               entity_id: !input valve
-          - delay: "{{ duration_minutes * 60 }}"
+          - delay: "{{ duration_min * 60 }}"
           - action: switch.turn_off
             target:
               entity_id: !input valve
