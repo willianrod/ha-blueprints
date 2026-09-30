@@ -1,11 +1,36 @@
 id: "1785009677315"
 alias: Liga luz faixada se detecta pessoa na calçada
-description: ""
-use_blueprint:
-  path: willianrod/motion-light.yaml
-  input:
-    trigger_sensors:
-      - binary_sensor.calcada_person_occupancy
-    target_entities:
+description: >-
+  Madrugada apenas (23h30 ao nascer do sol): acende a faixada quando detecta
+  pessoa na calçada e apaga 2 minutos após o último movimento (10 min sem
+  movimento). Fora dessa janela, a faixada é controlada pela automação
+  Faixada Noturna.
+mode: restart
+trigger:
+  - platform: state
+    entity_id: binary_sensor.calcada_person_occupancy
+    to: "on"
+    id: movimento
+condition:
+  - condition: template
+    value_template: >-
+      {{ now() >= today_at('23:30')
+         or (is_state('sun.sun', 'below_horizon') and now().hour < 12) }}
+action:
+  - action: switch.turn_on
+    metadata: {}
+    data: {}
+    target:
       entity_id: switch.faixada
-    timeout_seconds: 600
+  - wait_for_trigger:
+      - platform: state
+        entity_id: binary_sensor.calcada_person_occupancy
+        to: "off"
+    timeout: "00:10:00"
+  - delay:
+      minutes: 2
+  - action: switch.turn_off
+    metadata: {}
+    data: {}
+    target:
+      entity_id: switch.faixada

@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/willianrod/ha-blueprints#readme",
   "dependencies": {
+    "mqtt": "^5.16.0",
     "yaml": "^2.9.1"
   }
 }

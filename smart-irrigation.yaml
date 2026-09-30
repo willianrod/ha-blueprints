@@ -1,11 +1,13 @@
 blueprint:
   name: Smart Irrigation with Rain Check
   description: >
-    Waters a zone for a fixed duration at a scheduled time, skipping the run
-    when the daily weather forecast predicts rain at or above a threshold
-    (default 5 mm). Uses the weather.get_forecast service (daily forecast),
-    so any weather integration that supports forecasts works (OpenWeatherMap,
-    Met.no, etc.). Create one automation per irrigation zone.
+    Waters a zone at a scheduled time with seasonal durations and a
+    cycle-and-soak pattern (2 cycles split by a soak pause, reducing
+    runoff). Skips the run when the daily weather forecast predicts rain
+    at or above a threshold, or when real rain was registered within a
+    memory window (fill the linked input_datetime with an automation such
+    as "Registra Última Chuva"). Optionally sends a notification on
+    completion or skip. Create one automation per irrigation zone.
   domain: automation
   input:
     valve:
@@ -21,14 +23,47 @@ blueprint:
       selector:
         time: {}
 
-    duration_minutes:
-      name: Duration
-      description: How long the valve stays open, in minutes.
-      default: 10
+    summer_duration_minutes:
+      name: Summer Duration
+      description: Total minutes per run during summer months.
+      default: 12
       selector:
         number:
           min: 1
           max: 120
+          unit_of_measurement: minutes
+          mode: box
+          step: 1
+
+    winter_duration_minutes:
+      name: Winter Duration
+      description: Total minutes per run outside summer months.
+      default: 8
+      selector:
+        number:
+          min: 1
+          max: 120
+          unit_of_measurement: minutes
+          mode: box
+          step: 1
+
+    summer_months:
+      name: Summer Months
+      description: >-
+        Comma-separated month numbers considered summer (durations switch
+        accordingly). Southern hemisphere default.
+      default: "10,11,12,1,2,3"
+      selector:
+        text: {}
+
+    soak_minutes:
+      name: Soak Pause
+      description: Pause between the two watering cycles so water absorbs.
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 60
           unit_of_measurement: minutes
           mode: box
           step: 1
@@ -39,7 +74,6 @@ blueprint:
       selector:
         entity:
           domain: weather
-          integration: openweathermap
 
     rain_threshold_mm:
       name: Rain Threshold
@@ -53,10 +87,49 @@ blueprint:
           unit_of_measurement: mm
           mode: box
 
+    last_rain:
+      name: Last Rain Memory
+      description: >-
+        input_datetime storing the last real rain. Watering skips while the
+        stored timestamp is within the memory window below.
+      selector:
+        entity:
+          domain: input_datetime
+
+    rain_memory_hours:
+      name: Rain Memory Window
+      description: Hours after registered rain during which watering is skipped.
+      default: 48
+      selector:
+        number:
+          min: 0
+          max: 168
+          unit_of_measurement: hours
+          mode: box
+          step: 1
+
+    notify_service:
+      name: Notify Service (optional)
+      description: >-
+        Service to notify completion/skip, e.g.
+        notify.mobile_app_iphone_de_willian. Empty disables notifications.
+      default: ""
+      selector:
+        text: {}
+
 variables:
-  threshold_mm: !input rain_threshold_mm
   weather_entity_id: !input weather_entity
-  duration_min: !input duration_minutes
+  threshold_mm: !input rain_threshold_mm
+  last_rain_id: !input last_rain
+  rain_memory_h: !input rain_memory_hours
+  notify_svc: !input notify_service
+  summer_months_raw: !input summer_months
+  summer_minutes: !input summer_duration_minutes
+  winter_minutes: !input winter_duration_minutes
+  soak_min: !input soak_minutes
+  summer_months_list: "{{ summer_months_raw.split(',') | map('int') | list }}"
+  duration_min: "{{ (summer_minutes | int) if now().month in summer_months_list else (winter_minutes | int) }}"
+  half_seconds: "{{ (duration_min * 60 / 2) | int }}"
 
 mode: single
 
@@ -78,21 +151,59 @@ action:
         {% set data = forecast_response[weather_entity_id] if weather_entity_id in forecast_response else forecast_response %}
         {% set today = data.get('forecast', [])[0] if data.get('forecast') else none %}
         {{ (today.precipitation if today else 0) | default(0) | float(0) }}
+      rained_recently: >-
+        {{ states(last_rain_id) not in ['unknown', 'unavailable']
+           and (as_timestamp(now()) - as_timestamp(states(last_rain_id))) < (rain_memory_h | int) * 3600 }}
   - choose:
-      - alias: no significant rain forecasted -> water the zone
+      - alias: no rain forecasted or registered -> water the zone with cycle and soak
         conditions:
           - condition: template
             value_template: "{{ today_precipitation < threshold_mm }}"
+          - condition: template
+            value_template: "{{ not rained_recently }}"
         sequence:
-          - action: switch.turn_on
-            target:
-              entity_id: !input valve
-          - delay: "{{ duration_min * 60 }}"
-          - action: switch.turn_off
-            target:
-              entity_id: !input valve
+          - repeat:
+              count: 2
+              sequence:
+                - action: switch.turn_on
+                  target:
+                    entity_id: !input valve
+                - delay: "{{ half_seconds }}"
+                - action: switch.turn_off
+                  target:
+                    entity_id: !input valve
+                - alias: soak pause between cycles
+                  if:
+                    - condition: template
+                      value_template: "{{ not repeat.last }}"
+                  then:
+                    - delay:
+                        minutes: "{{ soak_min | int }}"
+          - alias: notify completion
+            if:
+              - condition: template
+                value_template: "{{ notify_svc | length > 0 }}"
+            then:
+              - action: "{{ notify_svc }}"
+                data:
+                  title: Irrigacao concluida
+                  message: >-
+                    {{ this.attributes.friendly_name }}: {{ duration_min }} min
+                    em 2 ciclos (pausa de {{ soak_min | int }} min).
     default:
-      - alias: rain forecasted -> skip, make sure the valve is closed
+      - alias: rain forecasted or registered -> skip, make sure the valve is closed
         action: switch.turn_off
         target:
           entity_id: !input valve
+      - alias: notify skip
+        if:
+          - condition: template
+            value_template: "{{ notify_svc | length > 0 }}"
+        then:
+          - action: "{{ notify_svc }}"
+            data:
+              title: Irrigacao pulada
+              message: >-
+                {{ this.attributes.friendly_name }}: previsao de
+                {{ today_precipitation }} mm (limite {{ threshold_mm }} mm)
+                ou chuva registrada ha menos de {{ rain_memory_h | int }}h.

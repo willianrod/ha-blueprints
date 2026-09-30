@@ -1,0 +1,35 @@
+# DRAFT — não ativo no Home Assistant
+#
+# Aprovado em conceito, adiado a pedido. Ativar quando quiser controle de
+# umidade no quarto (suíte costuma marcar ~70%).
+id: "1790709200111"
+alias: "[DRAFT] Desumidificar Suíte"
+description: >-
+  DRAFT. Quando a umidade da suíte passa de 68% com porta e janelas fechadas,
+  liga o AC da suíte no modo dry até a umidade cair abaixo de 62%.
+mode: single
+trigger:
+  - platform: numeric_state
+    entity_id: sensor.quarto_1_ar_suite_humidity
+    above: 68
+    for: "00:20:00"
+condition:
+  - condition: state
+    entity_id: binary_sensor.porta_suite_contact
+    state: "off"
+  - condition: state
+    entity_id: binary_sensor.janela_suite_contact
+    state: "off"
+  - condition: state
+    entity_id: binary_sensor.janela_closet_contact
+    state: "off"
+action:
+  - action: climate.set_hvac_mode
+    data:
+      hvac_mode: dry
+    target:
+      entity_id: climate.quarto_1_ar_suite
+  - wait_template: "{{ states('sensor.quarto_1_ar_suite_humidity') | float(40) < 62 }}"
+  - action: climate.turn_off
+    target:
+      entity_id: climate.quarto_1_ar_suite

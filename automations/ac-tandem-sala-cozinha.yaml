@@ -1,0 +1,110 @@
+id: "1790709200100"
+alias: AC Tandem Sala e Cozinha
+description: >-
+  Espelha o AC da sala e o cassete da cozinha: ligar qualquer um liga o outro
+  com a mesma temperatura e modo, desligar um desliga o outro, e mudanças de
+  temperatura/modo são sincronizadas nos dois sentidos.
+mode: queued
+max: 10
+trigger:
+  - platform: state
+    entity_id:
+      - climate.quarto_1_ar_condicionado_da_sala
+      - climate.sala_de_estar_ar_condicionado_cassete
+    not_to:
+      - unavailable
+      - unknown
+    not_from:
+      - unavailable
+      - unknown
+    id: change
+  - platform: state
+    entity_id:
+      - climate.quarto_1_ar_condicionado_da_sala
+      - climate.sala_de_estar_ar_condicionado_cassete
+    attribute: temperature
+    not_to:
+      - unavailable
+      - unknown
+    not_from:
+      - unavailable
+      - unknown
+    id: change
+condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.from_state is not none
+         and trigger.to_state.context.id not in [none, this.context.id] }}
+action:
+  - variables:
+      sala: climate.quarto_1_ar_condicionado_da_sala
+      cozinha: climate.sala_de_estar_ar_condicionado_cassete
+      dst: "{{ cozinha if trigger.entity_id == sala else sala }}"
+      novo_estado: "{{ trigger.to_state.state }}"
+      velho_estado: "{{ trigger.from_state.state }}"
+      nova_temp: "{{ trigger.to_state.attributes.get('temperature') }}"
+  - choose:
+      - alias: um ligou e o outro está desligado -> ligar o outro igual
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ novo_estado != 'off' and velho_estado == 'off'
+                 and is_state(dst, 'off') }}
+        sequence:
+          - action: climate.set_temperature
+            data:
+              temperature: "{{ nova_temp }}"
+              hvac_mode: "{{ novo_estado }}"
+            target:
+              entity_id: "{{ dst }}"
+          - alias: reconciliar setpoint caso o dispositivo tenha ligado com o valor antigo
+            delay:
+              seconds: 5
+          - if:
+              - condition: template
+                value_template: >-
+                  {{ not is_state(trigger.entity_id, 'off')
+                     and not is_state(dst, 'off')
+                     and state_attr(trigger.entity_id, 'temperature') is defined
+                     and state_attr(dst, 'temperature') != state_attr(trigger.entity_id, 'temperature') }}
+            then:
+              - action: climate.set_temperature
+                data:
+                  temperature: "{{ state_attr(trigger.entity_id, 'temperature') }}"
+                target:
+                  entity_id: "{{ dst }}"
+      - alias: um desligou -> desligar o outro
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ novo_estado == 'off' and velho_estado != 'off'
+                 and not is_state(dst, 'off') }}
+        sequence:
+          - action: climate.turn_off
+            target:
+              entity_id: "{{ dst }}"
+      - alias: temperatura mudou com ambos ligados -> espelhar
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ nova_temp is defined
+                 and novo_estado != 'off' and not is_state(dst, 'off')
+                 and state_attr(dst, 'temperature') != nova_temp }}
+        sequence:
+          - action: climate.set_temperature
+            data:
+              temperature: "{{ nova_temp }}"
+            target:
+              entity_id: "{{ dst }}"
+      - alias: modo mudou com ambos ligados -> espelhar
+        conditions:
+          - condition: template
+            value_template: >-
+              {{ novo_estado != 'off' and states(dst) != 'off'
+                 and states(dst) != novo_estado }}
+        sequence:
+          - action: climate.set_hvac_mode
+            data:
+              hvac_mode: "{{ novo_estado }}"
+            target:
+              entity_id: "{{ dst }}"

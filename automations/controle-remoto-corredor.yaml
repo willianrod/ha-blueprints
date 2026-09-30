@@ -5,8 +5,9 @@ description: >-
   Botão 1: luz do corredor (L3). Botão 2: sanca do corredor.
   Botão 3: luz da suíte. Botão 4: modo Dormir — apaga as luzes das áreas
   comuns (cozinha, sala, corredor, cinema e escritório), desliga os ACs
-  de escritório, cozinha, sala e cinema e deixa a sanca do corredor acesa
-  como iluminação suave.
+  de escritório, cozinha, sala e cinema, deixa o AC da suíte em 24C,
+  desliga TV e soundbar, ativa input_boolean.modo_dormir e deixa a sanca
+  do corredor acesa como iluminação suave.
 use_blueprint:
   path: willianrod/zigbee-remote.yaml
   input:
@@ -30,6 +31,44 @@ use_blueprint:
           entity_id: switch.suite_porta_left
         data: {}
     button_4_single:
+      - alias: ativar modo dormir
+        action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.modo_dormir
+      - alias: AC da suite em 24 graus
+        action: climate.set_temperature
+        metadata: {}
+        data:
+          temperature: 24
+          hvac_mode: cool
+        target:
+          entity_id: climate.quarto_1_ar_suite
+      - alias: desligar TV
+        if:
+          - condition: template
+            value_template: >-
+              {{ states('media_player.living_room_tv_2') not in
+                 ['off', 'unavailable', 'unknown'] }}
+        then:
+          - action: media_player.turn_off
+            metadata: {}
+            data: {}
+            target:
+              entity_id: media_player.living_room_tv_2
+      - alias: desligar soundbar
+        if:
+          - condition: template
+            value_template: >-
+              {{ states('media_player.sala_de_estar_q_series_soundbar') not in
+                 ['off', 'unavailable', 'unknown'] }}
+        then:
+          - action: media_player.turn_off
+            metadata: {}
+            data: {}
+            target:
+              entity_id: media_player.sala_de_estar_q_series_soundbar
       - alias: apagar luzes da cozinha
         action: switch.turn_off
         metadata: {}

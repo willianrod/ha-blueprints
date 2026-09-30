@@ -2,12 +2,20 @@ id: "1790709200003"
 alias: Irrigação Jardim dos Fundos
 description: >-
   Rega o jardim dos fundos (heliconia vermelha) pela manhã logo após o jardim
-  da frente, pulando o dia quando a previsão indica chuva >= 5 mm.
+  da frente, em 2 ciclos com pausa e duração sazonal (verão 12 min / inverno
+  8 min). Pula o dia quando a previsão indica chuva >= 5 mm ou quando choveu
+  de verdade nas últimas 48h.
 use_blueprint:
   path: willianrod/smart-irrigation.yaml
   input:
     valve: switch.0xc4d8c8fffe118b3f
     start_time: "06:15:00"
-    duration_minutes: 10
+    summer_duration_minutes: 12
+    winter_duration_minutes: 8
+    summer_months: "10,11,12,1,2,3"
+    soak_minutes: 10
     weather_entity: weather.openweathermap
     rain_threshold_mm: 5
+    last_rain: input_datetime.ultima_chuva
+    rain_memory_hours: 48
+    notify_service: notify.mobile_app_iphone_de_willian

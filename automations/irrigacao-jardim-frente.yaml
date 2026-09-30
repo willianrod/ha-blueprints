@@ -2,12 +2,20 @@ id: "1790709200002"
 alias: Irrigação Jardim da Frente
 description: >-
   Rega o jardim da frente (maranta charuto, alpinias, xanadu e guaiambê) pela
-  manhã, pulando o dia quando a previsão indica chuva >= 5 mm.
+  manhã em 2 ciclos com pausa, com duração sazonal (verão 12 min / inverno
+  8 min). Pula o dia quando a previsão indica chuva >= 5 mm ou quando choveu
+  de verdade nas últimas 48h.
 use_blueprint:
   path: willianrod/smart-irrigation.yaml
   input:
     valve: switch.0xc4d8c8fffe4b0aad
     start_time: "06:00:00"
-    duration_minutes: 10
+    summer_duration_minutes: 12
+    winter_duration_minutes: 8
+    summer_months: "10,11,12,1,2,3"
+    soak_minutes: 10
     weather_entity: weather.openweathermap
     rain_threshold_mm: 5
+    last_rain: input_datetime.ultima_chuva
+    rain_memory_hours: 48
+    notify_service: notify.mobile_app_iphone_de_willian

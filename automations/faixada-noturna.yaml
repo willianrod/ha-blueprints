@@ -1,0 +1,30 @@
+id: "1790709200108"
+alias: Faixada Noturna
+description: >-
+  Acende a faixada no pôr do sol e apaga às 23h30. Depois das 23h30 até o
+  amanhecer, quem passa na calçada acende a faixada por 10 minutos (automação
+  dedicada de movimento).
+mode: single
+trigger:
+  - platform: sun
+    event: sunset
+    id: por_do_sol
+  - platform: time
+    at: "23:30:00"
+    id: apagar
+action:
+  - if:
+      - condition: trigger
+        id: por_do_sol
+    then:
+      - action: switch.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.faixada
+    else:
+      - action: switch.turn_off
+        metadata: {}
+        data: {}
+        target:
+          entity_id: switch.faixada

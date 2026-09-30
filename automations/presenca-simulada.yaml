@@ -1,0 +1,41 @@
+id: "1790709200106"
+alias: Presença Simulada
+description: >-
+  Com o Modo Viagem ativado manualmente (input_boolean.modo_viagem), acende
+  duas luzes aleatórias ao anoitecer, com atraso e duração aleatórios, para
+  simular presença de pessoas em casa.
+mode: single
+max: 5
+trigger:
+  - platform: sun
+    event: sunset
+    id: anoitecer
+condition:
+  - condition: state
+    entity_id: input_boolean.modo_viagem
+    state: "on"
+variables:
+  pool:
+    - light.cortineiro_suite
+    - light.moveis_suite
+    - light.sanca_corredor
+    - light.fita_de_led_escritorio
+    - light.luminaria_willian
+  escolhidas: "{{ (pool | shuffle | list)[:2] }}"
+action:
+  - alias: atraso aleatorio de entrada
+    delay:
+      minutes: "{{ range(1, 20) | random }}"
+  - alias: acender luzes escolhidas
+    action: light.turn_on
+    data: {}
+    target:
+      entity_id: "{{ escolhidas }}"
+  - alias: manter acesas por tempo aleatorio
+    delay:
+      minutes: "{{ range(60, 180) | random }}"
+  - alias: apagar luzes
+    action: light.turn_off
+    data: {}
+    target:
+      entity_id: "{{ escolhidas }}"

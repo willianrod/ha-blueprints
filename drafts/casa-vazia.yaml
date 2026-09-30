@@ -1,0 +1,75 @@
+# DRAFT — não ativo no Home Assistant
+#
+# Motivo: presença não confiável. A namorada não usa o app (ou não deixa em
+# segundo plano), então person.willian sozinho não garante casa vazia.
+# Ativar quando houver uma segunda fonte de presença (celular dela, sensor
+# de presença, etc.) ou um toggle manual "ninguém em casa".
+id: "1790709200110"
+alias: "[DRAFT] Casa Vazia"
+description: >-
+  DRAFT. Quando ninguém estiver em casa por 15 minutos, desliga todos os ACs,
+  luzes internas e mídia. Na chegada, acende o caminho (garagem/sala) se
+  escuro e liga o AC da sala se a temperatura passar de 27C.
+mode: single
+trigger:
+  - platform: state
+    entity_id: person.willian_rodrigues
+    to: not_home
+    for: "00:15:00"
+    id: saiu
+  - platform: state
+    entity_id: person.willian_rodrigues
+    to: home
+    id: chegou
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: saiu
+        sequence:
+          - action: climate.turn_off
+            target:
+              entity_id:
+                - climate.quarto_1_ar_quarto_terreo
+                - climate.sala_de_estar_ar_cinema
+                - climate.sala_de_estar_ar_condicionado_cassete
+                - climate.quarto_1_ar_condicionado_da_sala
+                - climate.quarto_1_ar_escritorio
+                - climate.quarto_1_ar_suite
+                - climate.quarto_1_quarto_aylla
+          - action: homeassistant.turn_off
+            target:
+              entity_id:
+                - light.cortineiro_demi
+                - light.cortineiro_suite
+                - light.moveis_suite
+                - light.moveis_demi_suite
+                - light.corticeiro_aylla
+                - light.fita_de_led_escritorio
+                - light.led_moveis
+          - action: media_player.turn_off
+            target:
+              entity_id: media_player.living_room_tv_2
+      - conditions:
+          - condition: trigger
+            id: chegou
+        sequence:
+          - if:
+              - condition: sun
+                after: sunset
+            then:
+              - action: switch.turn_on
+                target:
+                  entity_id:
+                    - switch.faixada
+          - if:
+              - condition: numeric_state
+                entity_id: sensor.quarto_1_ar_condicionado_da_sala_temperature
+                above: 27
+            then:
+              - action: climate.set_temperature
+                data:
+                  temperature: 23
+                  hvac_mode: cool
+                target:
+                  entity_id: climate.quarto_1_ar_condicionado_da_sala

@@ -1,0 +1,31 @@
+id: "1790709200104"
+alias: Vigia de Baterias
+description: >-
+  Digest semanal (segundas às 10h) notificando sensores Zigbee com bateria
+  abaixo de 15%. Ignora baterias de celulares, tablets, navegador e robô.
+mode: single
+trigger:
+  - platform: time
+    at: "10:00:00"
+    id: digest_semanal
+condition:
+  - condition: template
+    value_template: >-
+      {{ now().isoweekday() == 1 and criticas | count > 0 }}
+variables:
+  criticas: >-
+    {% set ns = namespace(itens=[]) %}
+    {% for s in states.sensor
+       if s.entity_id.endswith('_battery')
+       and not s.entity_id.startswith(
+            ('sensor.browser', 'sensor.sm_x', 'sensor.iphone',
+             'sensor.xiaomi', 'sensor.9e8bf811'))
+       and is_number(s.state) and s.state | float < 15 %}
+      {% set ns.itens = ns.itens + [s.name ~ ': ' ~ s.state ~ '%'] %}
+    {% endfor %}
+    {{ ns.itens }}
+action:
+  - action: notify.iphone_de_willian
+    data:
+      title: Baterias criticas semanal
+      message: "{{ criticas | join('\n') }}"

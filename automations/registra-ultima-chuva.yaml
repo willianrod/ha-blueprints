@@ -1,0 +1,24 @@
+id: "1790709200102"
+alias: Registra Última Chuva
+description: >-
+  Quando o clima atual indica chuva contínua por 30 minutos, grava a data/hora
+  em input_datetime.ultima_chuva para a irrigação pular regas após chuva real.
+mode: single
+trigger:
+  - platform: state
+    entity_id: weather.openweathermap
+    to:
+      - rainy
+      - pouring
+      - lightning
+      - lightning-rainy
+      - hail
+      - snowy
+      - snowy-rainy
+    for: "00:30:00"
+action:
+  - action: input_datetime.set_datetime
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    target:
+      entity_id: input_datetime.ultima_chuva

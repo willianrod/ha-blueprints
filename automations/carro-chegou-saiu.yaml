@@ -1,0 +1,24 @@
+id: "1790709200107"
+alias: Carro chegou ou saiu
+description: >-
+  Notifica quando um carro fica detectado por 90s na zona da calçada
+  (chegada) ou some por 90s (partida).
+mode: single
+trigger:
+  - platform: state
+    entity_id: binary_sensor.calcada_car_occupancy
+    to: "on"
+    for: "00:01:30"
+    id: chegou
+  - platform: state
+    entity_id: binary_sensor.calcada_car_occupancy
+    to: "off"
+    for: "00:01:30"
+    id: saiu
+action:
+  - action: notify.iphone_de_willian
+    data:
+      title: "{{ 'Carro chegou na frente' if trigger.id == 'chegou' else 'Carro saiu' }}"
+      message: >-
+        Detectado pela camera da frente (zona calcada) as
+        {{ now().strftime('%H:%M') }}.

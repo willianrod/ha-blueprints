@@ -1,0 +1,47 @@
+id: "1790709200103"
+alias: Sair Consciente
+description: >-
+  Ao sair de casa ou ativar o modo Dormir, notifica se alguma janela ou porta
+  externa ficou aberta. Portas internas (quartos, cinema, escritório, closet e
+  demi suite) não são monitoradas.
+mode: single
+variables:
+  aberturas_exteriores:
+    - binary_sensor.porta_frente_contact
+    - binary_sensor.janela_frente_contact
+    - binary_sensor.janela_demi_contact
+    - binary_sensor.janela_cozinha_contact
+    - binary_sensor.porta_fundos_contact
+    - binary_sensor.porta_lavanderia_contact
+    - binary_sensor.janela_escada_esquerda_contact
+    - binary_sensor.janela_escada_direita_contact
+    - binary_sensor.janela_cinema_contact
+    - binary_sensor.janela_escritorio_contact
+    - binary_sensor.porta_jardim_de_inverno_contact
+    - binary_sensor.porta_sacada_fundos_contact
+    - binary_sensor.janela_suite_contact
+    - binary_sensor.janela_closet_contact
+    - binary_sensor.janela_quarto_superior_contact
+  abertas: >-
+    {{ expand(aberturas_exteriores) | selectattr('state', 'eq', 'on')
+       | map(attribute='name') | list }}
+trigger:
+  - platform: state
+    entity_id: person.willian_rodrigues
+    to: not_home
+    for: "00:02:00"
+    id: saiu
+  - platform: state
+    entity_id: input_boolean.modo_dormir
+    to: "on"
+    id: dormir
+condition:
+  - condition: template
+    value_template: "{{ abertas | count > 0 }}"
+action:
+  - action: notify.iphone_de_willian
+    data:
+      title: >-
+        {{ 'Aberturas externas abertas ao dormir' if trigger.id == 'dormir'
+           else 'Aberturas externas abertas ao sair' }}
+      message: "{{ abertas | join(', ') }}"

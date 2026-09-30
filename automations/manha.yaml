@@ -1,0 +1,35 @@
+id: "1790709200101"
+alias: Modo Manhã
+description: >-
+  Encerra o modo Dormir no primeiro movimento detectado na escada entre 5h e
+  11h, apagando a iluminação noturna (sanca do corredor).
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.sensor_escada_superior_occupancy
+      - binary_sensor.sensor_escada_inferior_occupancy
+    to: "on"
+condition:
+  - condition: state
+    entity_id: input_boolean.modo_dormir
+    state: "on"
+  - condition: time
+    after: "05:00:00"
+    before: "11:00:00"
+action:
+  - alias: encerrar modo dormir
+    action: input_boolean.turn_off
+    data: {}
+    target:
+      entity_id: input_boolean.modo_dormir
+  - alias: apagar sanca do corredor
+    if:
+      - condition: state
+        entity_id: light.sanca_corredor
+        state: "on"
+    then:
+      - action: light.turn_off
+        data: {}
+        target:
+          entity_id: light.sanca_corredor
