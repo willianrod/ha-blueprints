@@ -1,0 +1,55 @@
+id: bom_dia
+alias: Bom Dia
+description: >-
+  Rotina de manhã: encerra o modo Dormir, apaga a iluminação noturna e
+  anuncia no tablet da cozinha um resumo do clima (temperatura atual,
+  máxima do dia e previsão de chuva). Disparável por voz ("bom dia"), pelo
+  primeiro movimento na escada (automação Modo Manhã) ou pelo dashboard.
+icon: mdi:weather-sunny
+mode: single
+sequence:
+  - alias: encerrar modo dormir
+    if:
+      - condition: state
+        entity_id: input_boolean.modo_dormir
+        state: "on"
+    then:
+      - action: input_boolean.turn_off
+        data: {}
+        target:
+          entity_id: input_boolean.modo_dormir
+  - alias: apagar sanca do corredor
+    if:
+      - condition: state
+        entity_id: light.sanca_corredor
+        state: "on"
+    then:
+      - action: light.turn_off
+        data: {}
+        target:
+          entity_id: light.sanca_corredor
+  - alias: buscar previsao diaria
+    action: weather.get_forecasts
+    data:
+      type: daily
+    target:
+      entity_id: weather.openweathermap
+    response_variable: fx
+  - variables:
+      hoje: "{{ (fx['weather.openweathermap'].forecast)[0] }}"
+      temp_agora: "{{ state_attr('weather.openweathermap', 'temperature') }}"
+      chuva_mm: "{{ hoje.precipitation | default(0) }}"
+  - alias: anunciar resumo no tablet da cozinha
+    if:
+      - condition: template
+        value_template: "{{ states('assist_satellite.tablet_1') not in ['unavailable', 'unknown'] }}"
+    then:
+      - action: assist_satellite.announce
+        data:
+          message: >-
+            Bom dia! Agora estão {{ temp_agora }} graus. A máxima hoje é de
+            {{ hoje.temperature }} graus{% if chuva_mm | float > 0 %}, com
+            {{ chuva_mm | round(1) }} milímetros de chuva previstos, leve o
+            guarda-chuva{% else %} e não há chuva prevista para hoje{% endif %}.
+        target:
+          entity_id: assist_satellite.tablet_1

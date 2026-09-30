@@ -39,6 +39,19 @@ condition:
   - condition: template
     value_template: "{{ abertas | count > 0 }}"
 action:
+  - alias: anunciar no tablet da cozinha
+    if:
+      - condition: template
+        value_template: "{{ states('assist_satellite.tablet_1') not in ['unavailable', 'unknown'] }}"
+    then:
+      - action: assist_satellite.announce
+        data:
+          message: >-
+            Atenção! {{ abertas | count }} abertura{{ 's' if abertas | count > 1 }} externa{{ 's' if abertas | count > 1 }}
+            {{ 'estão abertas' if abertas | count > 1 else 'está aberta' }}:
+            {{ abertas | join(', ') }}.
+        target:
+          entity_id: assist_satellite.tablet_1
   - action: notify.iphone_de_willian
     data:
       title: >-

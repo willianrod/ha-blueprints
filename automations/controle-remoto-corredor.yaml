@@ -3,11 +3,11 @@ alias: Controle Remoto Corredor
 description: >-
   Controle de 4 botões no corredor do mezanino (fora da suíte).
   Botão 1: luz do corredor (L3). Botão 2: sanca do corredor.
-  Botão 3: luz da suíte. Botão 4: modo Dormir — apaga as luzes das áreas
-  comuns (cozinha, sala, corredor, cinema e escritório), desliga os ACs
-  de escritório, cozinha, sala e cinema, deixa o AC da suíte em 24C,
-  desliga TV e soundbar, ativa input_boolean.modo_dormir e deixa a sanca
-  do corredor acesa como iluminação suave.
+  Botão 3: luz da suíte. Botão 4: modo Dormir — executa o script
+  modo_dormir (apaga luzes das áreas comuns, desliga ACs de escritório,
+  cozinha, sala e cinema, deixa o AC da suíte em 24C, desliga TV/soundbar,
+  ativa input_boolean.modo_dormir e deixa a sanca do corredor acesa como
+  iluminação suave).
 use_blueprint:
   path: willianrod/zigbee-remote.yaml
   input:
@@ -31,122 +31,9 @@ use_blueprint:
           entity_id: switch.suite_porta_left
         data: {}
     button_4_single:
-      - alias: ativar modo dormir
-        action: input_boolean.turn_on
+      - alias: executar rotina de dormir
+        action: script.turn_on
         metadata: {}
         data: {}
         target:
-          entity_id: input_boolean.modo_dormir
-      - alias: AC da suite em 24 graus
-        action: climate.set_temperature
-        metadata: {}
-        data:
-          temperature: 24
-          hvac_mode: cool
-        target:
-          entity_id: climate.quarto_1_ar_suite
-      - alias: desligar TV
-        if:
-          - condition: template
-            value_template: >-
-              {{ states('media_player.living_room_tv_2') not in
-                 ['off', 'unavailable', 'unknown'] }}
-        then:
-          - action: media_player.turn_off
-            metadata: {}
-            data: {}
-            target:
-              entity_id: media_player.living_room_tv_2
-      - alias: desligar soundbar
-        if:
-          - condition: template
-            value_template: >-
-              {{ states('media_player.sala_de_estar_q_series_soundbar') not in
-                 ['off', 'unavailable', 'unknown'] }}
-        then:
-          - action: media_player.turn_off
-            metadata: {}
-            data: {}
-            target:
-              entity_id: media_player.sala_de_estar_q_series_soundbar
-      - alias: apagar luzes da cozinha
-        action: switch.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - switch.cozinha_1_l1
-            - switch.cozinha_1_l2
-            - switch.cozinha_1_l3
-            - switch.cozinha_1_l4
-            - switch.cozinha_1_l5
-            - switch.cozinha_1_l6
-            - switch.cozinha_2_l1
-            - switch.cozinha_2_l2
-            - switch.cozinha_2_l3
-            - switch.cozinha_2_l4
-            - switch.cozinha_2_l5
-            - switch.cozinha_2_l6
-      - alias: apagar luzes da sala e escada
-        action: homeassistant.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - switch.sala_interruptor_l1
-            - switch.sala_interruptor_l2
-            - switch.sala_interruptor_l3
-            - switch.sala_interruptor_l4
-            - switch.sala_interruptor_l5
-            - switch.sala_interruptor_l6
-            - light.escada
-      - alias: apagar luzes do corredor
-        action: homeassistant.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - switch.corredor_l1
-            - switch.corredor_l2
-            - switch.corredor_l3
-            - switch.corredor_l4
-            - switch.corredor_l5
-            - switch.corredor_l6
-            - light.sanca_corredor
-      - alias: apagar luzes do cinema
-        action: switch.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - switch.interruptor_cinema_l1
-            - switch.interruptor_cinema_l2
-            - switch.interruptor_cinema_l3
-            - switch.interruptor_cinema_l4
-      - alias: apagar luzes do escritório
-        action: homeassistant.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - switch.interruptor_escritorio_l1
-            - switch.interruptor_escritorio_l2
-            - switch.interruptor_escritorio_l3
-            - switch.interruptor_escritorio_l4
-            - light.fita_de_led_escritorio
-      - alias: desligar ACs das áreas comuns
-        action: climate.turn_off
-        metadata: {}
-        data: {}
-        target:
-          entity_id:
-            - climate.quarto_1_ar_escritorio
-            - climate.sala_de_estar_ar_condicionado_cassete
-            - climate.quarto_1_ar_condicionado_da_sala
-            - climate.sala_de_estar_ar_cinema
-      - alias: iluminação suave na sanca do corredor
-        action: light.turn_on
-        metadata: {}
-        data: {}
-        target:
-          entity_id: light.sanca_corredor
+          entity_id: script.modo_dormir

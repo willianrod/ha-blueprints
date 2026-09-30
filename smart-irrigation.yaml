@@ -117,12 +117,23 @@ blueprint:
       selector:
         text: {}
 
+    announce_satellite:
+      name: Announce Satellite (optional)
+      description: >-
+        assist_satellite entity to voice-announce completion/skip, e.g.
+        assist_satellite.tablet_1. Empty disables announcements. Announcements
+        are skipped automatically while the satellite is unavailable.
+      default: ""
+      selector:
+        text: {}
+
 variables:
   weather_entity_id: !input weather_entity
   threshold_mm: !input rain_threshold_mm
   last_rain_id: !input last_rain
   rain_memory_h: !input rain_memory_hours
   notify_svc: !input notify_service
+  announce_sat: !input announce_satellite
   summer_months_raw: !input summer_months
   summer_minutes: !input summer_duration_minutes
   winter_minutes: !input winter_duration_minutes
@@ -190,6 +201,20 @@ action:
                   message: >-
                     {{ this.attributes.friendly_name }}: {{ duration_min }} min
                     em 2 ciclos (pausa de {{ soak_min | int }} min).
+          - alias: announce completion
+            if:
+              - condition: template
+                value_template: >-
+                  {{ announce_sat | length > 0
+                     and states(announce_sat) not in ['unavailable', 'unknown'] }}
+            then:
+              - action: assist_satellite.announce
+                data:
+                  message: >-
+                    {{ this.attributes.friendly_name }} concluída:
+                    {{ duration_min }} minutos em dois ciclos.
+                target:
+                  entity_id: "{{ announce_sat }}"
     default:
       - alias: rain forecasted or registered -> skip, make sure the valve is closed
         action: switch.turn_off
@@ -207,3 +232,17 @@ action:
                 {{ this.attributes.friendly_name }}: previsao de
                 {{ today_precipitation }} mm (limite {{ threshold_mm }} mm)
                 ou chuva registrada ha menos de {{ rain_memory_h | int }}h.
+      - alias: announce skip
+        if:
+          - condition: template
+            value_template: >-
+              {{ announce_sat | length > 0
+                 and states(announce_sat) not in ['unavailable', 'unknown'] }}
+        then:
+          - action: assist_satellite.announce
+            data:
+              message: >-
+                {{ this.attributes.friendly_name }} foi pulada por causa da
+                chuva.
+            target:
+              entity_id: "{{ announce_sat }}"

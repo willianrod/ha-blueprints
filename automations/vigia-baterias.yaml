@@ -25,6 +25,18 @@ variables:
     {% endfor %}
     {{ ns.itens }}
 action:
+  - alias: anunciar digest no tablet da cozinha
+    if:
+      - condition: template
+        value_template: "{{ states('assist_satellite.tablet_1') not in ['unavailable', 'unknown'] }}"
+    then:
+      - action: assist_satellite.announce
+        data:
+          message: >-
+            Resumo semanal de baterias: {{ criticas | count }} dispositivo{{ 's' if criticas | count > 1 }}
+            com bateria baixa. {{ criticas | join(', ') }}.
+        target:
+          entity_id: assist_satellite.tablet_1
   - action: notify.iphone_de_willian
     data:
       title: Baterias criticas semanal

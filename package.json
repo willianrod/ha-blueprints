@@ -5,6 +5,7 @@
   "scripts": {
     "fetch": "node scripts/fetch.mjs",
     "push:automations": "node scripts/push-automation.mjs",
+    "push:scripts": "node scripts/push-script.mjs",
     "push:blueprint": "node scripts/push-blueprint.mjs"
   },
   "repository": {
