@@ -1,0 +1,87 @@
+id: "1790709200132"
+alias: Chuva com Janelas Abertas
+description: >-
+  Se começa a chover (10 min de chuva) com alguma abertura externa aberta,
+  ou se uma abertura externa é aberta enquanto chove, notifica o iPhone e
+  anuncia no tablet listando quais estão abertas. Só monitora aberturas
+  externas.
+mode: single
+variables:
+  aberturas_exteriores:
+    - binary_sensor.porta_frente_contact
+    - binary_sensor.janela_frente_contact
+    - binary_sensor.janela_demi_contact
+    - binary_sensor.janela_cozinha_contact
+    - binary_sensor.porta_fundos_contact
+    - binary_sensor.porta_lavanderia_contact
+    - binary_sensor.janela_escada_esquerda_contact
+    - binary_sensor.janela_escada_direita_contact
+    - binary_sensor.janela_cinema_contact
+    - binary_sensor.janela_escritorio_contact
+    - binary_sensor.porta_jardim_de_inverno_contact
+    - binary_sensor.porta_sacada_fundos_contact
+    - binary_sensor.janela_suite_contact
+    - binary_sensor.janela_closet_contact
+    - binary_sensor.janela_quarto_superior_contact
+  abertas: >-
+    {{ expand(aberturas_exteriores) | selectattr('state', 'eq', 'on')
+       | map(attribute='name') | list }}
+  chovendo: >-
+    {{ states('weather.openweathermap') in
+       ['rainy', 'pouring', 'lightning', 'lightning-rainy', 'hail',
+        'snowy', 'snowy-rainy'] }}
+trigger:
+  - platform: state
+    entity_id: weather.openweathermap
+    to:
+      - rainy
+      - pouring
+      - lightning
+      - lightning-rainy
+      - hail
+      - snowy
+      - snowy-rainy
+    for: "00:10:00"
+    id: comecou_chover
+  - platform: state
+    entity_id:
+      - binary_sensor.porta_frente_contact
+      - binary_sensor.janela_frente_contact
+      - binary_sensor.janela_demi_contact
+      - binary_sensor.janela_cozinha_contact
+      - binary_sensor.porta_fundos_contact
+      - binary_sensor.porta_lavanderia_contact
+      - binary_sensor.janela_escada_esquerda_contact
+      - binary_sensor.janela_escada_direita_contact
+      - binary_sensor.janela_cinema_contact
+      - binary_sensor.janela_escritorio_contact
+      - binary_sensor.porta_jardim_de_inverno_contact
+      - binary_sensor.porta_sacada_fundos_contact
+      - binary_sensor.janela_suite_contact
+      - binary_sensor.janela_closet_contact
+      - binary_sensor.janela_quarto_superior_contact
+    to: "on"
+    id: abriu
+condition:
+  - condition: template
+    value_template: "{{ chovendo and abertas | count > 0 }}"
+action:
+  - alias: anunciar no tablet da cozinha
+    if:
+      - condition: template
+        value_template: "{{ states('assist_satellite.tablet_1') not in ['unavailable', 'unknown'] }}"
+    then:
+      - action: assist_satellite.announce
+        data:
+          message: >-
+            Está chovendo e {{ abertas | count }} abertura{{ 's' if abertas | count > 1 }}
+            {{ 'estão abertas' if abertas | count > 1 else 'está aberta' }}:
+            {{ abertas | join(', ') }}.
+        target:
+          entity_id: assist_satellite.tablet_1
+  - action: notify.send_message
+    target:
+      entity_id: notify.iphone_de_willian
+    data:
+      title: Chuva com janelas abertas
+      message: "Está chovendo e estão abertas: {{ abertas | join(', ') }}."
