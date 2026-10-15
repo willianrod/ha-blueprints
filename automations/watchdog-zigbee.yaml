@@ -376,7 +376,9 @@ action:
             está offline há uma hora.
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.iphone_de_willian
+  - action: notify.send_message
+    target:
+      entity_id: notify.iphone_de_willian
     data:
       title: Dispositivo Zigbee offline
       message: >-

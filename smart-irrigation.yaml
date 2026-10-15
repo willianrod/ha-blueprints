@@ -111,8 +111,8 @@ blueprint:
     notify_service:
       name: Notify Service (optional)
       description: >-
-        Service to notify completion/skip, e.g.
-        notify.mobile_app_iphone_de_willian. Empty disables notifications.
+        Notify entity for completion/skip (notify.send_message target), e.g.
+        notify.iphone_de_willian. Empty disables notifications.
       default: ""
       selector:
         text: {}
@@ -195,7 +195,9 @@ action:
               - condition: template
                 value_template: "{{ notify_svc | length > 0 }}"
             then:
-              - action: "{{ notify_svc }}"
+              - action: notify.send_message
+                target:
+                  entity_id: "{{ notify_svc }}"
                 data:
                   title: Irrigacao concluida
                   message: >-
@@ -225,7 +227,9 @@ action:
           - condition: template
             value_template: "{{ notify_svc | length > 0 }}"
         then:
-          - action: "{{ notify_svc }}"
+          - action: notify.send_message
+            target:
+              entity_id: "{{ notify_svc }}"
             data:
               title: Irrigacao pulada
               message: >-

@@ -46,7 +46,9 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_aviso_postura
-          - action: notify.mobile_app_iphone_de_willian
+          - action: notify.send_message
+            target:
+              entity_id: notify.iphone_de_willian
             data:
               title: Hora de ficar em pé
               message: >-
@@ -67,7 +69,9 @@ action:
             data: {}
             target:
               entity_id: button.desk_preset_1
-          - action: notify.mobile_app_iphone_de_willian
+          - action: notify.send_message
+            target:
+              entity_id: notify.iphone_de_willian
             data:
               title: Mesa levantada
               message: Sem resposta em 10 min — movi a mesa para a posição em pé.
@@ -81,7 +85,9 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_aviso_postura
-          - action: notify.mobile_app_iphone_de_willian
+          - action: notify.send_message
+            target:
+              entity_id: notify.iphone_de_willian
             data:
               title: Hora de sentar um pouco
               message: >-
@@ -102,7 +108,9 @@ action:
             data: {}
             target:
               entity_id: button.desk_preset_2
-          - action: notify.mobile_app_iphone_de_willian
+          - action: notify.send_message
+            target:
+              entity_id: notify.iphone_de_willian
             data:
               title: Mesa abaixada
               message: Sem resposta em 10 min — movi a mesa para a posição sentada.
