@@ -1,0 +1,85 @@
+id: "1790709200125"
+alias: Escritório Clima Conforto
+description: >-
+  Conforto térmico do escritório SOMENTE com presença. Sua temperatura
+  favorita é 24C (nunca mudou o setpoint no histórico). Com o AC ligado,
+  ajusta o setpoint pela umidade priorizando conforto e economizando quando
+  está seco: >=68% -> 23C, 58-68% -> 24C, <58% -> 25C. Com o AC desligado e
+  calor (>=26C por 10 min), convida a ligar (no máximo 1x a cada 2h).
+mode: single
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.quarto_1_ar_escritorio_temperature
+      - sensor.quarto_1_ar_escritorio_humidity
+    id: ambiente_mudou
+  - platform: numeric_state
+    entity_id: sensor.quarto_1_ar_escritorio_temperature
+    above: 26
+    for: "00:10:00"
+    id: calor
+variables:
+  temp: "{{ states('sensor.quarto_1_ar_escritorio_temperature') | float(0) }}"
+  hum: "{{ states('sensor.quarto_1_ar_escritorio_humidity') | float(0) }}"
+  ac_ligado: "{{ states('climate.quarto_1_ar_escritorio') not in ['off', 'unavailable', 'unknown'] }}"
+  set_atual: "{{ state_attr('climate.quarto_1_ar_escritorio', 'temperature') }}"
+  alvo: "{{ 23 if hum >= 68 else (24 if hum >= 58 else 25) }}"
+  sensacao: >-
+    {% set t = (temp * 9/5 + 32) %}{% set h = hum %}
+    {% if temp >= 27 %}
+      {{ ((-42.379 + 2.04901523 * t + 10.14333127 * h - 0.22475541 * t * h
+          - 0.00683783 * t * t - 0.05481717 * h * h + 0.00122874 * t * t * h
+          + 0.00085282 * t * h * h - 0.00000199 * t * t * h * h - 32) * 5/9) | round(1) }}
+    {% else %}
+      {{ temp | round(1) }}
+    {% endif %}
+  ultimo_convite: "{{ states('input_datetime.ultimo_convite_ac_escritorio') }}"
+condition:
+  - condition: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    state: "on"
+action:
+  - choose:
+      - alias: AC ligado -> ajustar setpoint pela umidade
+        conditions:
+          - condition: trigger
+            id: ambiente_mudou
+          - condition: template
+            value_template: "{{ ac_ligado }}"
+          - condition: template
+            value_template: "{{ set_atual is not none and (alvo | int) != (set_atual | int) }}"
+        sequence:
+          - action: climate.set_temperature
+            data:
+              temperature: "{{ alvo | int }}"
+            target:
+              entity_id: climate.quarto_1_ar_escritorio
+      - alias: calor com AC desligado -> convidar (max 1x/2h)
+        conditions:
+          - condition: trigger
+            id: calor
+          - condition: template
+            value_template: "{{ not ac_ligado }}"
+          - condition: template
+            value_template: >-
+              {{ ultimo_convite in ['unknown', 'unavailable']
+                 or (as_timestamp(now()) - as_timestamp(ultimo_convite, 0)) > 7200 }}
+        sequence:
+          - action: input_datetime.set_datetime
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            target:
+              entity_id: input_datetime.ultimo_convite_ac_escritorio
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Calor no escritório?
+              message: >-
+                Escritório em {{ temp | round(1) }}°C (sensação de
+                {{ sensacao }}°C, umidade {{ hum | round(0) }}%). Ligar o AC
+                em 24°C?
+              data:
+                actions:
+                  - action: LIGAR_AC_ESCRITORIO
+                    title: Ligar AC
+                  - action: IGNORAR_AC_ESCRITORIO
+                    title: Agora não

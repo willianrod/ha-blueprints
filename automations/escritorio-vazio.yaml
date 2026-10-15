@@ -1,0 +1,50 @@
+id: "1790709200120"
+alias: Escritório Vazio Desliga Tudo
+description: >-
+  Resolve o problema de sair e deixar AC e luzes ligados: sem presença por
+  20 minutos com a porta fechada, ou 45 minutos independente da porta,
+  desliga o AC do escritório, a fita de LED e os interruptores L1-L4.
+mode: single
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    to: "off"
+    for: "00:20:00"
+    id: vazio_porta_fechada
+  - platform: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    to: "off"
+    for: "00:45:00"
+    id: vazio_geral
+condition:
+  - condition: or
+    conditions:
+      - condition: and
+        conditions:
+          - condition: trigger
+            id: vazio_porta_fechada
+          - condition: state
+            entity_id: binary_sensor.porta_escritorio_contact
+            state: "off"
+      - condition: trigger
+        id: vazio_geral
+action:
+  - alias: desligar AC do escritorio
+    if:
+      - condition: template
+        value_template: "{{ not is_state('climate.quarto_1_ar_escritorio', 'off') }}"
+    then:
+      - action: climate.turn_off
+        data: {}
+        target:
+          entity_id: climate.quarto_1_ar_escritorio
+  - alias: apagar luzes do escritorio
+    action: homeassistant.turn_off
+    data: {}
+    target:
+      entity_id:
+        - light.fita_de_led_escritorio
+        - switch.interruptor_escritorio_l1
+        - switch.interruptor_escritorio_l2
+        - switch.interruptor_escritorio_l3
+        - switch.interruptor_escritorio_l4

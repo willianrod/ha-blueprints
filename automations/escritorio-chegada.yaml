@@ -1,0 +1,24 @@
+id: "1790709200121"
+alias: Escritório Chegada Acende Luz
+description: >-
+  Quando alguém chega ao escritório (presença detectada) e está escuro
+  (iluminância abaixo de 50 lux), acende a fita de LED. A L3 do interruptor
+  acompanha pela sincronização existente entre L3 e fita.
+mode: single
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    to: "on"
+    for: "00:00:30"
+condition:
+  - condition: numeric_state
+    entity_id: sensor.sensor_de_presenca_escritorio_illuminance
+    below: 50
+  - condition: state
+    entity_id: light.fita_de_led_escritorio
+    state: "off"
+action:
+  - action: light.turn_on
+    data: {}
+    target:
+      entity_id: light.fita_de_led_escritorio

@@ -1,0 +1,107 @@
+id: "1790709200123"
+alias: Mesa Coach de Postura
+description: >-
+  Coach de alternância sentado/em pé (baseado nas recomendações ergonômicas:
+  trocar de postura a cada 40-60 min, blocos em pé de ~20 min, meta ~2h em
+  pé por dia). Roda SOMENTE com presença no escritório, das 7h às 23h.
+  Sentado por 50 min -> notifica com ações (Levantar / Adiar 10 min);
+  sem resposta em 10 min move a mesa sozinha para o preset em pé.
+  Em pé por 20 min -> mesmo fluxo para sentar (preset sentado).
+  Altura sentado <= 75 cm; em pé >= 85 cm (zona 75-85 pausa o coach). Preset 1 = em pé, 2 = sentado.
+mode: single
+trigger:
+  - platform: time_pattern
+    minutes: /5
+variables:
+  altura: "{{ states('sensor.desk_height') | float(0) }}"
+  sentado: "{{ altura <= 75 }}"
+  em_pe: "{{ altura >= 85 }}"
+  ultima: "{{ states('input_datetime.ultima_postura_mesa') }}"
+  ultimo_aviso: "{{ states('input_datetime.ultimo_aviso_postura') }}"
+  postura_valida: "{{ ultima not in ['unknown', 'unavailable'] }}"
+  min_postura: "{{ ((as_timestamp(now()) - as_timestamp(ultima, 0)) / 60) | int }}"
+  avisado: >-
+    {{ ultimo_aviso not in ['unknown', 'unavailable']
+       and as_timestamp(ultimo_aviso, 0) > as_timestamp(ultima, 0) }}
+  min_aviso: "{{ ((as_timestamp(now()) - as_timestamp(ultimo_aviso, 0)) / 60) | int if avisado else 0 }}"
+condition:
+  - condition: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    state: "on"
+  - condition: time
+    after: "07:00:00"
+    before: "23:00:00"
+  - condition: template
+    value_template: "{{ postura_valida and (sentado or em_pe) and is_state('binary_sensor.desk_moving', 'off') }}"
+action:
+  - choose:
+      - alias: sentado ha 50 min e ainda sem aviso -> notificar
+        conditions:
+          - condition: template
+            value_template: "{{ sentado and min_postura >= 50 and not avisado }}"
+        sequence:
+          - action: input_datetime.set_datetime
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            target:
+              entity_id: input_datetime.ultimo_aviso_postura
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Hora de ficar em pé
+              message: >-
+                Você está sentado há {{ min_postura }} min. Que tal ~20 min
+                em pé? (Alternar a cada 40-60 min, meta ~2h em pé por dia.)
+              data:
+                actions:
+                  - action: LEVANTAR_MESA
+                    title: Levantar agora
+                  - action: ADIAR_MESA
+                    title: Adiar 10 min
+      - alias: sentado, avisado ha 10 min sem resposta -> levantar sozinho
+        conditions:
+          - condition: template
+            value_template: "{{ sentado and avisado and min_aviso >= 10 }}"
+        sequence:
+          - action: button.press
+            data: {}
+            target:
+              entity_id: button.desk_preset_1
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Mesa levantada
+              message: Sem resposta em 10 min — movi a mesa para a posição em pé.
+      - alias: em pe ha 20 min e ainda sem aviso -> notificar
+        conditions:
+          - condition: template
+            value_template: "{{ em_pe and min_postura >= 20 and not avisado }}"
+        sequence:
+          - action: input_datetime.set_datetime
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            target:
+              entity_id: input_datetime.ultimo_aviso_postura
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Hora de sentar um pouco
+              message: >-
+                Você está em pé há {{ min_postura }} min. Sente-se um pouco
+                para descansar as pernas.
+              data:
+                actions:
+                  - action: SENTAR_MESA
+                    title: Sentar agora
+                  - action: ADIAR_MESA
+                    title: Adiar 10 min
+      - alias: em pe, avisado ha 10 min sem resposta -> sentar sozinho
+        conditions:
+          - condition: template
+            value_template: "{{ em_pe and avisado and min_aviso >= 10 }}"
+        sequence:
+          - action: button.press
+            data: {}
+            target:
+              entity_id: button.desk_preset_2
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Mesa abaixada
+              message: Sem resposta em 10 min — movi a mesa para a posição sentada.

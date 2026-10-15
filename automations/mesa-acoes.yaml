@@ -1,0 +1,55 @@
+id: "1790709200124"
+alias: Mesa Ações do Celular
+description: >-
+  Trata os botões das notificações do coach de postura: Levantar agora,
+  Sentar agora e Adiar 10 min (reinicia a tolerância antes do movimento
+  automático).
+mode: queued
+max: 5
+trigger:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: LEVANTAR_MESA
+    id: levantar
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: SENTAR_MESA
+    id: sentar
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: ADIAR_MESA
+    id: adiar
+condition:
+  - condition: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    state: "on"
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: levantar
+        sequence:
+          - action: button.press
+            data: {}
+            target:
+              entity_id: button.desk_preset_1
+      - conditions:
+          - condition: trigger
+            id: sentar
+        sequence:
+          - action: button.press
+            data: {}
+            target:
+              entity_id: button.desk_preset_2
+      - conditions:
+          - condition: trigger
+            id: adiar
+        sequence:
+          - action: input_datetime.set_datetime
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            target:
+              entity_id: input_datetime.ultimo_aviso_postura
