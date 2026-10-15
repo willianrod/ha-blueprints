@@ -7,7 +7,8 @@ description: >-
   Sentado por 50 min -> notifica com ações (Levantar / Adiar 10 min);
   sem resposta em 10 min move a mesa sozinha para o preset em pé.
   Em pé por 20 min -> mesmo fluxo para sentar (preset sentado).
-  Altura sentado <= 75 cm; em pé >= 85 cm (zona 75-85 pausa o coach). Preset 1 = em pé, 2 = sentado.
+  Altura sentado <= 75 cm; em pé >= 85 cm (zona 75-85 pausa o coach).
+  Alturas medidas: preset 1 (em pé) = 111 cm, preset 2 (sentado) = 68,6 cm. Preset 1 = em pé, 2 = sentado.
 mode: single
 trigger:
   - platform: time_pattern
