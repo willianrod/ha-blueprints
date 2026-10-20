@@ -1,18 +1,18 @@
 id: "1790709200122"
 alias: Mesa Registra Troca de Postura
 description: >-
-  Observa a altura da mesa e registra cada troca de postura (sentado <= 75 cm / em pé >= 85 cm, em input_datetime.ultima_postura_mesa, reiniciando o ciclo
+  Observa a altura da mesa e registra cada troca de postura (sentado <= 82 cm / em pé >= 96 cm; em input_datetime.ultima_postura_mesa, reiniciando o ciclo
   do coach. Também reinicia o ciclo quando uma nova sessão de presença
   começa no escritório.
 mode: single
 trigger:
   - platform: numeric_state
     entity_id: sensor.desk_height
-    above: 85
+    above: 96
     id: levantou
   - platform: numeric_state
     entity_id: sensor.desk_height
-    below: 75
+    below: 82
     id: sentou
   - platform: state
     entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
