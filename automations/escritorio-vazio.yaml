@@ -17,17 +17,28 @@ trigger:
     for: "00:45:00"
     id: vazio_geral
 condition:
-  - condition: or
+  - condition: and
     conditions:
-      - condition: and
+      - condition: or
         conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id: vazio_porta_fechada
+              - condition: state
+                entity_id: binary_sensor.porta_escritorio_contact
+                state: "off"
           - condition: trigger
-            id: vazio_porta_fechada
-          - condition: state
-            entity_id: binary_sensor.porta_escritorio_contact
-            state: "off"
-      - condition: trigger
-        id: vazio_geral
+            id: vazio_geral
+      - alias: mesa em movimento = alguem esta usando
+        condition: state
+        entity_id: binary_sensor.desk_moving
+        state: "off"
+      - alias: grace de 5 min apos abrir/fechar a porta
+        condition: template
+        value_template: >-
+          {{ (as_timestamp(now())
+             - as_timestamp(states.binary_sensor.porta_escritorio_contact.last_changed, now() | as_timestamp)) > 300 }}
 action:
   - alias: desligar AC do escritorio
     if:
