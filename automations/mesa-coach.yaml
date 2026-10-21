@@ -7,17 +7,19 @@ description: >-
   Sentado por 50 min -> notifica com ações (Levantar / Adiar 10 min);
   sem resposta em 10 min move a mesa sozinha para o preset em pé.
   Em pé por 20 min -> mesmo fluxo para sentar (preset sentado).
-  Altura sentado <= 82 cm; em pé >= 96 cm. Zona 82-96 (ex.: 88,8 cm
-  de posição intermediária manual) pausa o coach — não mexer na mesa.
+  Classificação relativa à altura em pé: < 96 cm = sentado (inclui a
+  posição intermediária 88,8 cm e o valor-fantasma do ESP após
+  reconexão), >= 96 cm = em pé.
   Alturas medidas: preset 1 (em pé) = 111 cm, preset 2 (sentado) = 68,6 cm.
-  Presets reais nunca caem na zona morta; só o usuário a coloca lá manualmente. Preset 1 = em pé, 2 = sentado.
+  O sensor só publica altura em movimento; valores defasados são
+  tratados como sentado (falha segura: nunca congela o coach). Preset 1 = em pé, 2 = sentado.
 mode: single
 trigger:
   - platform: time_pattern
     minutes: /5
 variables:
   altura: "{{ states('sensor.desk_height') | float(0) }}"
-  sentado: "{{ altura <= 82 }}"
+  sentado: "{{ altura < 96 }}"
   em_pe: "{{ altura >= 96 }}"
   ultima: "{{ states('input_datetime.ultima_postura_mesa') }}"
   ultimo_aviso: "{{ states('input_datetime.ultimo_aviso_postura') }}"
