@@ -19,9 +19,7 @@ action:
           message: Tem alguém na porta de entrada.
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.send_message
-    target:
-      entity_id: notify.iphone_de_willian
+  - action: notify.mobile_app_iphone_de_willian
     data:
       title: Alguém na porta
       message: "Visitante detectado às {{ now().strftime('%H:%M') }}."

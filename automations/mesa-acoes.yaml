@@ -1,9 +1,12 @@
 id: "1790709200124"
 alias: Mesa Ações do Celular
 description: >-
-  Trata os botões das notificações do coach de postura: Levantar agora,
-  Sentar agora e Adiar 10 min (reinicia a tolerância antes do movimento
-  automático).
+  Trata os botões das notificações do coach de postura: Levantar agora
+  (preset 1), Sentar agora (preset 2) e Adiar 10 min. O adiamento renova o
+  aviso (o movimento automático só acontece 10 min após o último aviso) e é
+  limitado a 2 vezes por ciclo — depois disso o botão de adiar é ignorado
+  para garantir que você não fique sentado indefinidamente. O contador é
+  zerado a cada troca de postura (mesa-troca-postura).
 mode: queued
 max: 5
 trigger:
@@ -47,9 +50,16 @@ action:
       - conditions:
           - condition: trigger
             id: adiar
+          - condition: numeric_state
+            entity_id: input_number.mesa_adiamentos
+            below: 2
         sequence:
           - action: input_datetime.set_datetime
             data:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_aviso_postura
+          - action: input_number.increment
+            data: {}
+            target:
+              entity_id: input_number.mesa_adiamentos

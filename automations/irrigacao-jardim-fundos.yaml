@@ -18,5 +18,5 @@ use_blueprint:
     rain_threshold_mm: 5
     last_rain: input_datetime.ultima_chuva
     rain_memory_hours: 48
-    notify_service: notify.iphone_de_willian
+    notify_service: notify.mobile_app_iphone_de_willian
     announce_satellite: assist_satellite.tablet_1

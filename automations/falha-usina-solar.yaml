@@ -19,9 +19,7 @@ action:
           message: Atenção! A usina solar reportou uma falha. Verifique o aplicativo da Sungrow.
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.send_message
-    target:
-      entity_id: notify.iphone_de_willian
+  - action: notify.mobile_app_iphone_de_willian
     data:
       title: Falha na usina solar
       message: "Falha detectada às {{ now().strftime('%H:%M') }} — verifique o app da Sungrow."

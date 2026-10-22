@@ -37,9 +37,7 @@ action:
             com bateria baixa. {{ criticas | join(', ') }}.
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.send_message
-    target:
-      entity_id: notify.iphone_de_willian
+  - action: notify.mobile_app_iphone_de_willian
     data:
       title: Baterias criticas semanal
       message: "{{ criticas | join('\n') }}"

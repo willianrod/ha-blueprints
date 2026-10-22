@@ -20,9 +20,7 @@ action:
           message: Atenção! O alarme da cerca elétrica disparou. Verifique o perímetro.
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.send_message
-    target:
-      entity_id: notify.iphone_de_willian
+  - action: notify.mobile_app_iphone_de_willian
     data:
       title: Alarme da cerca elétrica
       message: "Disparo às {{ now().strftime('%H:%M') }} — verifique o perímetro."

@@ -28,9 +28,7 @@ action:
                else 'O carro saiu.' }}
         target:
           entity_id: assist_satellite.tablet_1
-  - action: notify.send_message
-    target:
-      entity_id: notify.iphone_de_willian
+  - action: notify.mobile_app_iphone_de_willian
     data:
       title: "{{ 'Carro chegou na frente' if trigger.id == 'chegou' else 'Carro saiu' }}"
       message: >-

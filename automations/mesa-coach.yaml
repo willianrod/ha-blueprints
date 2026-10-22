@@ -1,26 +1,23 @@
 id: "1790709200123"
 alias: Mesa Coach de Postura
 description: >-
-  Coach de alternância sentado/em pé (baseado nas recomendações ergonômicas:
-  trocar de postura a cada 40-60 min, blocos em pé de ~20 min, meta ~2h em
+  Coach de alternância sentado/em pé baseado em recomendações ergonômicas
+  (trocar de postura a cada 40-60 min, blocos em pé de ~20 min, meta ~2h em
   pé por dia). Roda SOMENTE com presença no escritório, das 7h às 23h.
-  Sentado por 50 min -> notifica com ações (Levantar / Adiar 10 min);
-  sem resposta em 10 min move a mesa sozinha para o preset em pé.
-  Em pé por 20 min -> mesmo fluxo para sentar (preset sentado).
-  Classificação relativa à altura em pé: < 96 cm = sentado (inclui a
-  posição intermediária 88,8 cm e o valor-fantasma do ESP após
-  reconexão), >= 96 cm = em pé.
-  Alturas medidas: preset 1 (em pé) = 111 cm, preset 2 (sentado) = 68,6 cm.
-  O sensor só publica altura em movimento; valores defasados são
-  tratados como sentado (falha segura: nunca congela o coach). Preset 1 = em pé, 2 = sentado.
+  Sentado por 50 min -> avisa que a mesa vai subir em 10 min (botões:
+  Levantar agora / Adiar 10 min, máx. 2 adiamentos); sem resposta, move
+  sozinha para o preset em pé. Em pé por 20 min -> mesmo fluxo para sentar.
+  Limiar: altura < 90 cm = sentado (preset 2 = 68,6 cm), >= 90 cm = em pé
+  (preset 1 = 111 cm). Notificações via serviço legado mobile_app (único
+  que aceita data.actions no iPhone).
 mode: single
 trigger:
   - platform: time_pattern
     minutes: /5
 variables:
   altura: "{{ states('sensor.desk_height') | float(0) }}"
-  sentado: "{{ altura < 96 }}"
-  em_pe: "{{ altura >= 96 }}"
+  sentado: "{{ altura < 90 }}"
+  em_pe: "{{ altura >= 90 }}"
   ultima: "{{ states('input_datetime.ultima_postura_mesa') }}"
   ultimo_aviso: "{{ states('input_datetime.ultimo_aviso_postura') }}"
   postura_valida: "{{ ultima not in ['unknown', 'unavailable'] }}"
@@ -37,10 +34,10 @@ condition:
     after: "07:00:00"
     before: "23:00:00"
   - condition: template
-    value_template: "{{ postura_valida and (sentado or em_pe) and is_state('binary_sensor.desk_moving', 'off') }}"
+    value_template: "{{ postura_valida and is_state('binary_sensor.desk_moving', 'off') }}"
 action:
   - choose:
-      - alias: sentado ha 50 min e ainda sem aviso -> notificar
+      - alias: sentado ha 50 min sem aviso -> avisar que vai subir em 10 min
         conditions:
           - condition: template
             value_template: "{{ sentado and min_postura >= 50 and not avisado }}"
@@ -50,15 +47,14 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_aviso_postura
-          - action: notify.send_message
-            target:
-              entity_id: notify.iphone_de_willian
+          - action: notify.mobile_app_iphone_de_willian
             data:
               title: Hora de ficar em pé
               message: >-
-                Você está sentado há {{ min_postura }} min. Que tal ~20 min
-                em pé? (Alternar a cada 40-60 min, meta ~2h em pé por dia.)
+                Você está sentado há {{ min_postura }} min. A mesa vai subir
+                em 10 min — ou toque em "Levantar agora".
               data:
+                tag: mesa-postura
                 actions:
                   - action: LEVANTAR_MESA
                     title: Levantar agora
@@ -73,13 +69,15 @@ action:
             data: {}
             target:
               entity_id: button.desk_preset_1
-          - action: notify.send_message
-            target:
-              entity_id: notify.iphone_de_willian
+          - action: notify.mobile_app_iphone_de_willian
             data:
               title: Mesa levantada
-              message: Sem resposta em 10 min — movi a mesa para a posição em pé.
-      - alias: em pe ha 20 min e ainda sem aviso -> notificar
+              message: >-
+                Sem resposta em 10 min — movi a mesa para a posição em pé.
+                ~20 min em pé fazem bem para a coluna.
+              data:
+                tag: mesa-postura
+      - alias: em pe ha 20 min sem aviso -> avisar que vai descer em 10 min
         conditions:
           - condition: template
             value_template: "{{ em_pe and min_postura >= 20 and not avisado }}"
@@ -89,15 +87,14 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_aviso_postura
-          - action: notify.send_message
-            target:
-              entity_id: notify.iphone_de_willian
+          - action: notify.mobile_app_iphone_de_willian
             data:
               title: Hora de sentar um pouco
               message: >-
-                Você está em pé há {{ min_postura }} min. Sente-se um pouco
-                para descansar as pernas.
+                Você está em pé há {{ min_postura }} min. A mesa vai descer
+                em 10 min — ou toque em "Sentar agora".
               data:
+                tag: mesa-postura
                 actions:
                   - action: SENTAR_MESA
                     title: Sentar agora
@@ -112,9 +109,9 @@ action:
             data: {}
             target:
               entity_id: button.desk_preset_2
-          - action: notify.send_message
-            target:
-              entity_id: notify.iphone_de_willian
+          - action: notify.mobile_app_iphone_de_willian
             data:
               title: Mesa abaixada
               message: Sem resposta em 10 min — movi a mesa para a posição sentada.
+              data:
+                tag: mesa-postura

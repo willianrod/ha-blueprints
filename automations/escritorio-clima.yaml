@@ -70,9 +70,7 @@ action:
               datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
             target:
               entity_id: input_datetime.ultimo_convite_ac_escritorio
-          - action: notify.send_message
-            target:
-              entity_id: notify.iphone_de_willian
+          - action: notify.mobile_app_iphone_de_willian
             data:
               title: Calor no escritório?
               message: >-
