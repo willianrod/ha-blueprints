@@ -1,0 +1,51 @@
+id: "1790709200127"
+alias: Presença Escritório Travada Watchdog
+description: >-
+  O sensor mmWave do escritório já travou em "on" por dias (após ficar
+  unavailable), fazendo o coach da mesa mover a mesa e notificar sem ninguém
+  no escritório. Este watchdog detecta o travamento: presença ON contínua
+  por 2h é fisicamente improvável (o timeout do sensor é 120s, pausas
+  naturais geram OFFs) -> marca input_boolean.presenca_escritorio_travada,
+  pausa o coach da mesa e notifica uma vez. O boolean desarma sozinho
+  quando o sensor volta a reportar OFF.
+mode: restart
+trigger:
+  - platform: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    to: "on"
+    for: "02:00:00"
+    id: travou
+  - platform: state
+    entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
+    to: "off"
+    id: destravou
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: travou
+          - condition: state
+            entity_id: input_boolean.presenca_escritorio_travada
+            state: "off"
+        sequence:
+          - action: input_boolean.turn_on
+            data: {}
+            target:
+              entity_id: input_boolean.presenca_escritorio_travada
+          - action: notify.mobile_app_iphone_de_willian
+            data:
+              title: Sensor de presença travado
+              message: >-
+                O sensor do escritório está em "on" há 2h seguidas — provável
+                travamento. Coach da mesa pausado até ele voltar ao normal.
+                Considere reiniciar o sensor da tomada/USB.
+              data:
+                tag: presenca-travada
+      - conditions:
+          - condition: trigger
+            id: destravou
+        sequence:
+          - action: input_boolean.turn_off
+            data: {}
+            target:
+              entity_id: input_boolean.presenca_escritorio_travada

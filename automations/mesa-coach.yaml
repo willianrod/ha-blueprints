@@ -8,8 +8,10 @@ description: >-
   Levantar agora / Adiar 10 min, máx. 2 adiamentos); sem resposta, move
   sozinha para o preset em pé. Em pé por 20 min -> mesmo fluxo para sentar.
   Limiar: altura < 90 cm = sentado (preset 2 = 68,6 cm), >= 90 cm = em pé
-  (preset 1 = 111 cm). Notificações via serviço legado mobile_app (único
-  que aceita data.actions no iPhone).
+  (preset 1 = 111 cm). Só age com presença estável (>= 2,5 min) e com o
+  sensor não travado (input_boolean.presenca_escritorio_travada = off).
+  Notificações via serviço legado mobile_app (único que aceita
+  data.actions no iPhone).
 mode: single
 trigger:
   - platform: time_pattern
@@ -30,6 +32,10 @@ condition:
   - condition: state
     entity_id: binary_sensor.sensor_de_presenca_escritorio_presence
     state: "on"
+    for: "00:02:30"
+  - condition: state
+    entity_id: input_boolean.presenca_escritorio_travada
+    state: "off"
   - condition: time
     after: "07:00:00"
     before: "23:00:00"
